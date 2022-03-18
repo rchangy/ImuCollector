@@ -22,8 +22,8 @@ import java.io.IOException;
 /*
 存所有 UI 相關資料的地方（因為 view model 存活時間會比 activity 長、也不會因為手機轉方向就重生一個）
 因為使用 data binding 所以 xml 檔案可以直接拿到這裡的資料（不用透過 activity 或 fragment 去設定）， data binding 的資料必須為 livedata
-SavedStateHandle 類似一個小的 database，可以把一些簡單的變數放進去，變數的值可以在 view model 重生的時候再拿到（fragment 的 bundle 也是類似的東西）
 兩個 fragment 會共用這個 view model
+我錯了：（（（（ 如果要讓變數活過重新開 app 要用 shared preference （https://developer.android.com/training/data-storage/shared-preferences）之後會改：（（（（
  */
 public class HomeViewModel extends AndroidViewModel{
     private SavedStateHandle savedStateHandle;
@@ -130,21 +130,19 @@ public class HomeViewModel extends AndroidViewModel{
         new ExportFileTask().execute(dirUri);
     }
 
-    public void updateTimeText(){
+    public String getTimeText(){
         int passedTime = (int) (System.currentTimeMillis() - sessionStartTimestamp);
+        int ms = ((passedTime % 3600000) % 60000) % 1000;
+        int seconds = (passedTime % 3600000) % 60000 / 1000;
+        int minutes = (passedTime % 3600000) / 60000;
 
-        int seconds = ((passedTime % 86400) % 3600) % 60;
-        int minutes = ((passedTime % 86400) % 3600) / 60;
-        int hours = ((passedTime % 86400) / 3600);
-        timerText.setValue(formatTime(seconds, minutes, hours));
-        return;
+        return formatTime(ms, seconds, minutes);
     }
 
-    private String formatTime(int seconds, int minutes, int hours)
+    private String formatTime(int ms, int seconds, int minutes)
     {
-        return String.format("%02d",hours) + " : " + String.format("%02d",minutes) + " : " + String.format("%02d",seconds);
+        return String.format("%02d",minutes) + " : " + String.format("%02d",seconds) + " : " + String.format("%03d",ms);
     }
-
 
     private class ExportFileTask extends AsyncTask<Uri, Void, Integer>{
         @Override

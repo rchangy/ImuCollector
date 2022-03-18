@@ -58,14 +58,10 @@ public class HomeFragment extends Fragment {
             Log.d(LOG_TAG, "number picker value changed to " + i1);
         }
     };
+    private final int NUMBER_PICKER_MAX_VALUE = 1000;
+    private final int NUMBER_PICKER_MIN_VALUE = 0;
 
     private Timer timer = new Timer();
-    private TimerTask timerTask = new TimerTask() {
-        @Override
-        public void run() {
-            homeViewModel.updateTimeText();
-        }
-    };
 
     private Button buttonTimer;
     private Intent intent;
@@ -89,26 +85,34 @@ public class HomeFragment extends Fragment {
         sliderFreq.addOnChangeListener(changeListener);
         numberPicker = binding.numberPickerRecordId;
         numberPicker.setOnValueChangedListener(changeListenerNumberPicker);
+        numberPicker.setMaxValue(NUMBER_PICKER_MAX_VALUE);
+        numberPicker.setMinValue(NUMBER_PICKER_MIN_VALUE);
+        numberPicker.setValue(homeViewModel.currentRecordId.getValue());
         buttonTimer = binding.buttonTimer;
         buttonTimer.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        homeViewModel.startStopTimer();
-                        if(homeViewModel.isCollecting.getValue()){
-                            Log.d(LOG_TAG, "start timer");
-                            intent = new Intent(getContext(), MotionDataService.class);
-                            intent.putExtra("freq", homeViewModel.currentFreq.getValue());
-                            intent.putExtra("recordId", homeViewModel.currentRecordId.getValue());
-                            intent.putExtra("sessionId", homeViewModel.currentSessionId.getValue());
+                view1 -> {
+                    homeViewModel.startStopTimer();
+                    if(homeViewModel.isCollecting.getValue()){
+                        Log.d(LOG_TAG, "start timer");
+                        intent = new Intent(getContext(), MotionDataService.class);
+                        intent.putExtra("freq", homeViewModel.currentFreq.getValue());
+                        intent.putExtra("recordId", homeViewModel.currentRecordId.getValue());
+                        intent.putExtra("sessionId", homeViewModel.currentSessionId.getValue());
 //                            getContext().startForegroundService(intent);
-                            timer.scheduleAtFixedRate(timerTask, 0, 10);
-                        }
-                        else{
-                            Log.d(LOG_TAG, "stop timer");
+                        timer.scheduleAtFixedRate(new TimerTask() {
+                            @Override
+                            public void run() {
+                                String text = homeViewModel.getTimeText();
+                                getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
+                            }
+                        }, 0, 10);
+                    }
+                    else{
+                        Log.d(LOG_TAG, "stop timer");
 //                            getContext().stopService(intent);
-                            timer.cancel();
-                        }
+                        homeViewModel.timerText.setValue("00:00:000");
+                        timer.cancel();
+                        timer = new Timer();
                     }
                 }
         );
@@ -119,7 +123,14 @@ public class HomeFragment extends Fragment {
         super.onResume();
         Log.d(LOG_TAG, "fragment resume");
         if(homeViewModel.isCollecting.getValue()){
-            timer.scheduleAtFixedRate(timerTask, 0, 10);
+            timer = new Timer();
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    String text = homeViewModel.getTimeText();
+                    getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
+                }
+            }, 0, 10);
         }
     }
 
