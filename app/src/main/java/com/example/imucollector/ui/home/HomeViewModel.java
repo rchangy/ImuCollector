@@ -5,11 +5,15 @@ import androidx.lifecycle.MutableLiveData;
 
 
 import android.app.Application;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.util.Log;
+
 import androidx.documentfile.provider.DocumentFile;
 
 import androidx.lifecycle.SavedStateHandle;
+import androidx.preference.PreferenceManager;
 
 import com.example.imucollector.data.Session;
 import com.example.imucollector.data.SessionDao;
@@ -26,6 +30,10 @@ import java.io.IOException;
 我錯了：（（（（ 如果要讓變數活過重新開 app 要用 shared preference （https://developer.android.com/training/data-storage/shared-preferences）之後會改：（（（（
  */
 public class HomeViewModel extends AndroidViewModel{
+    private static final String LOG_TAG = "HomeViewModel";
+
+    private SharedPreferences sharedPref;
+    private SharedPreferences.Editor editor;
     private SavedStateHandle savedStateHandle;
 
     public MutableLiveData<Integer> currentFreq;
@@ -51,14 +59,45 @@ public class HomeViewModel extends AndroidViewModel{
 
     public HomeViewModel(Application application, SavedStateHandle savedStateHandle) {
         super(application);
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplication());
+        editor = sharedPref.edit();
         this.savedStateHandle = savedStateHandle;
+        load();
+        Log.d(LOG_TAG, "view model init with freq: " + currentFreq.getValue() + ", sessionId: " + currentSessionId.getValue() + ", recordId: " + currentRecordId.getValue());
+    }
+
+    public void load(){
         Integer defaultFreq = 60;
-        currentFreq = savedStateHandle.getLiveData(CURRENT_FREQ, defaultFreq);
-        currentSessionId = savedStateHandle.getLiveData(CURRENT_SESSION_ID, 0);
-        currentRecordId = savedStateHandle.getLiveData(CURRENT_RECORD_ID, 0);
+        if(savedStateHandle.contains(CURRENT_FREQ)) currentFreq = savedStateHandle.getLiveData(CURRENT_FREQ);
+        else {
+            currentFreq = new MutableLiveData<>();
+            setCurrentFreq(sharedPref.getInt(CURRENT_FREQ, defaultFreq));
+        }
+        if(savedStateHandle.contains(CURRENT_SESSION_ID)) currentSessionId = savedStateHandle.getLiveData(CURRENT_SESSION_ID);
+        else {
+            currentSessionId = new MutableLiveData<>();
+            setCurrentSessionId(sharedPref.getInt(CURRENT_SESSION_ID, 0));
+        }
+        if(savedStateHandle.contains(CURRENT_RECORD_ID)) currentRecordId = savedStateHandle.getLiveData(CURRENT_RECORD_ID);
+        else {
+            currentRecordId = new MutableLiveData<>();
+            setCurrentRecordId(sharedPref.getInt(CURRENT_RECORD_ID, 0));
+        }
         if(savedStateHandle.contains(SESSION_START_TIMESTAMP)) sessionStartTimestamp = savedStateHandle.get(SESSION_START_TIMESTAMP);
-        else sessionStartTimestamp = 0;
-        isCollecting = savedStateHandle.getLiveData(IS_COLLECTING, false);
+        else setSessionStartTimestamp(sharedPref.getLong(SESSION_START_TIMESTAMP, 0));
+        if(savedStateHandle.contains(IS_COLLECTING)) isCollecting = savedStateHandle.getLiveData(IS_COLLECTING);
+        else {
+            isCollecting = new MutableLiveData<>();
+            setIsCollecting(sharedPref.getBoolean(IS_COLLECTING, false));
+        }
+    }
+
+    public void save(){
+        editor.putInt(CURRENT_SESSION_ID, currentSessionId.getValue());
+        editor.putInt(CURRENT_RECORD_ID, currentRecordId.getValue());
+        editor.putInt(CURRENT_FREQ, currentFreq.getValue());
+        editor.putLong(SESSION_START_TIMESTAMP, sessionStartTimestamp);
+        editor.apply();
     }
 
     // for slider on change
@@ -67,17 +106,17 @@ public class HomeViewModel extends AndroidViewModel{
         savedStateHandle.set(CURRENT_FREQ, freq);
     }
 
-    private void incCurrentSessionId(){
-        int id = currentSessionId.getValue() + 1;
+    public void setCurrentSessionId(int id){
         currentSessionId.setValue(id);
         savedStateHandle.set(CURRENT_SESSION_ID, id);
     }
 
-    public void resetCurrentSessionId(){
-        int id = 0;
-        currentSessionId.setValue(id);
-        savedStateHandle.set(CURRENT_SESSION_ID, id);
+    private void incCurrentSessionId(){
+        int id = currentSessionId.getValue() + 1;
+        setCurrentSessionId(id);
     }
+
+    public void resetCurrentSessionId() {setCurrentFreq(0);}
 
     public void setCurrentRecordId(int id){
         currentRecordId.setValue(id);
@@ -139,10 +178,7 @@ public class HomeViewModel extends AndroidViewModel{
         return formatTime(ms, seconds, minutes);
     }
 
-    private String formatTime(int ms, int seconds, int minutes)
-    {
-        return String.format("%02d",minutes) + " : " + String.format("%02d",seconds) + " : " + String.format("%03d",ms);
-    }
+    private String formatTime(int ms, int seconds, int minutes) { return String.format("%02d",minutes) + " : " + String.format("%02d",seconds) + " : " + String.format("%03d",ms); }
 
     private class ExportFileTask extends AsyncTask<Uri, Void, Integer>{
         @Override
