@@ -1,12 +1,12 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 1,
-    "identityHash": "25f97172d6aa1330b6470da47eaf1c64",
+    "version": 2,
+    "identityHash": "65a9cf7f768ae9bc3bb5f1c9feca24bf",
     "entities": [
       {
         "tableName": "session",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` INTEGER NOT NULL, `freq` INTEGER NOT NULL, `record id` INTEGER NOT NULL, `session id` INTEGER NOT NULL, PRIMARY KEY(`record id`, `session id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` INTEGER NOT NULL, `freq` INTEGER NOT NULL, `recordId` INTEGER NOT NULL, `sessionId` INTEGER NOT NULL, PRIMARY KEY(`timestamp`))",
         "fields": [
           {
             "fieldPath": "timestamp",
@@ -22,21 +22,20 @@
           },
           {
             "fieldPath": "recordId",
-            "columnName": "record id",
+            "columnName": "recordId",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
             "fieldPath": "sessionId",
-            "columnName": "session id",
+            "columnName": "sessionId",
             "affinity": "INTEGER",
             "notNull": true
           }
         ],
         "primaryKey": {
           "columnNames": [
-            "record id",
-            "session id"
+            "timestamp"
           ],
           "autoGenerate": false
         },
@@ -147,7 +146,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '25f97172d6aa1330b6470da47eaf1c64')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '65a9cf7f768ae9bc3bb5f1c9feca24bf')"
     ]
   }
 }

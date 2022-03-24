@@ -27,7 +27,6 @@ import java.io.IOException;
 存所有 UI 相關資料的地方（因為 view model 存活時間會比 activity 長、也不會因為手機轉方向就重生一個）
 因為使用 data binding 所以 xml 檔案可以直接拿到這裡的資料（不用透過 activity 或 fragment 去設定）， data binding 的資料必須為 livedata
 兩個 fragment 會共用這個 view model
-我錯了：（（（（ 如果要讓變數活過重新開 app 要用 shared preference （https://developer.android.com/training/data-storage/shared-preferences）之後會改：（（（（
  */
 public class HomeViewModel extends AndroidViewModel{
     private static final String LOG_TAG = "HomeViewModel";
@@ -47,7 +46,7 @@ public class HomeViewModel extends AndroidViewModel{
     private SessionDao sessionDao = db.sessionDao();
 
     // timer for ui
-    public MutableLiveData<String> timerText = new MutableLiveData<>("00:00:00");
+    public MutableLiveData<String> timerText = new MutableLiveData<>("00 : 00 : 000");
     private long sessionStartTimestamp;
 
     // saved state
@@ -225,6 +224,18 @@ public class HomeViewModel extends AndroidViewModel{
         protected void onPostExecute(Integer integer) {
             super.onPostExecute(integer);
             // TODO: process result
+        }
+    }
+
+    public void saveFalseSession(){
+        new SaveSessionTask().execute();
+    }
+    private class SaveSessionTask extends AsyncTask<Void, Void, Void>{
+        @Override
+        protected Void doInBackground(Void... voids) {
+            Session testSession = new Session(sessionStartTimestamp, currentFreq.getValue(), currentRecordId.getValue(), currentSessionId.getValue());
+            sessionDao.insertSessions(testSession);
+            return null;
         }
     }
 }

@@ -23,7 +23,7 @@ public interface SessionDao {
     @Delete
     public void deleteSessions(Session... sessions);
 
-    @Query("SELECT * FROM session ORDER BY `record id`, `session id`")
+    @Query("SELECT * FROM session ORDER BY timestamp")
     public Session[] getAllSessions();
 
     // acc sensor data

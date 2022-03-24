@@ -72,6 +72,8 @@ public class HomeFragment extends Fragment {
                 new ViewModelProvider((ViewModelStoreOwner) requireActivity(), new SavedStateViewModelFactory(requireActivity().getApplication(), requireActivity())).get(HomeViewModel.class);
 
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_home, container, false);
+        binding.setHomeViewModel(homeViewModel);
+        binding.setLifecycleOwner(getViewLifecycleOwner());
         View root = binding.getRoot();
         return root;
     }
@@ -79,8 +81,6 @@ public class HomeFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        binding.setHomeViewModel(homeViewModel);
-        binding.setLifecycleOwner(getViewLifecycleOwner());
         sliderFreq = binding.sliderFreq;
         sliderFreq.addOnChangeListener(changeListener);
         numberPicker = binding.numberPickerRecordId;
@@ -89,33 +89,42 @@ public class HomeFragment extends Fragment {
         numberPicker.setMinValue(NUMBER_PICKER_MIN_VALUE);
         numberPicker.setValue(homeViewModel.currentRecordId.getValue());
         buttonTimer = binding.buttonTimer;
-        buttonTimer.setOnClickListener(
-                view1 -> {
-                    homeViewModel.startStopTimer();
-                    if(homeViewModel.isCollecting.getValue()){
-                        Log.d(LOG_TAG, "start timer");
-                        intent = new Intent(getContext(), MotionDataService.class);
-                        intent.putExtra("freq", homeViewModel.currentFreq.getValue());
-                        intent.putExtra("recordId", homeViewModel.currentRecordId.getValue());
-                        intent.putExtra("sessionId", homeViewModel.currentSessionId.getValue());
+        buttonTimer.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startStopTimer();
+            }
+        });
+    }
+
+    public void startStopTimer(){
+        homeViewModel.startStopTimer();
+        if(homeViewModel.isCollecting.getValue()){
+            Log.d(LOG_TAG, "start timer");
+            intent = new Intent(getContext(), MotionDataService.class);
+            intent.putExtra("freq", homeViewModel.currentFreq.getValue());
+            intent.putExtra("recordId", homeViewModel.currentRecordId.getValue());
+            intent.putExtra("sessionId", homeViewModel.currentSessionId.getValue());
 //                            getContext().startForegroundService(intent);
-                        timer.scheduleAtFixedRate(new TimerTask() {
-                            @Override
-                            public void run() {
-                                String text = homeViewModel.getTimeText();
-                                getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
-                            }
-                        }, 0, 10);
-                    }
-                    else{
-                        Log.d(LOG_TAG, "stop timer");
-//                            getContext().stopService(intent);
-                        homeViewModel.timerText.setValue("00:00:000");
-                        timer.cancel();
-                        timer = new Timer();
-                    }
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    String text = homeViewModel.getTimeText();
+                    getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
                 }
-        );
+            }, 0, 10);
+        }
+        else{
+            Log.d(LOG_TAG, "stop timer");
+//          getContext().stopService(intent);
+            homeViewModel.timerText.setValue("00:00:000");
+            timer.cancel();
+            timer = new Timer();
+
+
+            // test dashboard ui
+            homeViewModel.saveFalseSession();
+        }
     }
 
     @Override
