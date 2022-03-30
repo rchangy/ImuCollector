@@ -56,7 +56,7 @@ public class HomeViewModel extends AndroidViewModel{
     private final String PREFERENCE_FILE_KEY_TIMESTAMP = "sessionStartTimestamp";
     private final String PREFERENCE_FILE_KEY_IS_COLLECTING = "isCollecting";
 
-    private List<Session> selectedSession = new ArrayList<>();
+    private List<Long> selectedSession = new ArrayList<>();
 
     public HomeViewModel(Application application, SavedStateHandle savedStateHandle) {
         super(application);
@@ -144,7 +144,7 @@ public class HomeViewModel extends AndroidViewModel{
         return SessionRepository.getInstance().getAllSessions();
     }
 
-    public List<Session> getSelectedSession() { return selectedSession; }
+    public List<Long> getSelectedSession() { return selectedSession; }
 
     // for button on click
     public void startStopTimer(){
@@ -167,7 +167,7 @@ public class HomeViewModel extends AndroidViewModel{
     }
 
     public void deleteSessions(){
-        SessionRepository.getInstance().getSessionDao().deleteSessions(selectedSession.toArray(new Session[0]));
+        SessionRepository.getInstance().deleteSessions(selectedSession.toArray(new Long[0]));
         selectedSession.clear();
     }
 

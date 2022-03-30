@@ -1,5 +1,6 @@
 package com.example.imucollector.ui.dashboard;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,9 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SessionListAdapter extends ListAdapter<Session, SessionViewHolder> {
-    private final List<Session> selectedSession;
+    private static final String LOG_TAG = "SessionListAdapter";
+    private final List<Long> selectedSession;
 
-    public SessionListAdapter(@NonNull DiffUtil.ItemCallback<Session> diffCallback, List<Session> selectedSession){
+    public SessionListAdapter(@NonNull DiffUtil.ItemCallback<Session> diffCallback, List<Long> selectedSession){
         super(diffCallback);
         this.selectedSession = selectedSession;
     }
@@ -36,26 +38,24 @@ public class SessionListAdapter extends ListAdapter<Session, SessionViewHolder> 
     @Override
     public void onBindViewHolder(@NonNull SessionViewHolder holder, int position) {
         Session current = getItem(position);
-        boolean checked = selectedSession.contains(current);
+        boolean checked = selectedSession.contains(current.timestamp);
+
+        Log.d(LOG_TAG, "binding view holder, position: " + position + ", checked = " + checked);
+        Log.d(LOG_TAG, "current selected session: " + selectedSession.size());
         View.OnClickListener listener = new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 CheckBox checkBox = holder.getCheckBox();
-                if (checkBox.isChecked() && !selectedSession.contains(current)) {
-                    selectedSession.add(current);
-                } else if (!checkBox.isChecked() && selectedSession.contains(current)) {
-                    selectedSession.remove(current);
+                if (checkBox.isChecked() && !selectedSession.contains(current.timestamp)) {
+                    selectedSession.add(current.timestamp);
+                } else if (!checkBox.isChecked() && selectedSession.contains(current.timestamp)) {
+                    selectedSession.remove(current.timestamp);
                 }
             }
         };
         holder.bind(String.valueOf(current.recordId), String.valueOf(current.sessionId), DateFormat.getDateInstance().format(current.getDate()),
                 checked, listener);
 
-    }
-
-    public void deleteSelectedSessions(){
-        SessionRepository.getInstance().deleteSessions(selectedSession.toArray(new Session[0]));
-        selectedSession.clear();
     }
 
     static class SessionDiff extends DiffUtil.ItemCallback<Session> {
@@ -66,7 +66,7 @@ public class SessionListAdapter extends ListAdapter<Session, SessionViewHolder> 
 
         @Override
         public boolean areContentsTheSame(@NonNull Session oldItem, @NonNull Session newItem) {
-            return oldItem.timestamp == newItem.timestamp;
+            return oldItem.timestamp == newItem.timestamp && oldItem.sessionId == newItem.sessionId;
         }
     }
 }

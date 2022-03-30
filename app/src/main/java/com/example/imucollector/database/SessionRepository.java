@@ -46,18 +46,19 @@ public class SessionRepository {
         });
     }
 
-    public void deleteSessions(Session... sessions){
-        for(Session session : sessions){
-            deleteSession(session);
-        }
+    public void deleteSessions(Long[] timestamps){
+        SessionDatabase.pool.execute(()->{
+            Session[] sessions = sessionDao.getSelectedSessions(timestamps);
+            for(Session session : sessions){
+                deleteSessionInBackground(session);
+            }
+        });
     }
 
-    private void deleteSession(Session session){
-        SessionDatabase.pool.execute(()->{
-            sessionDao.deleteSessions(session);
-            sessionDao.deleteAccSensorDataBySession(session.recordId, session.sessionId);
-            sessionDao.deleteGyroSensorDataBySession(session.recordId, session.sessionId);
-        });
+    private void deleteSessionInBackground(Session session){
+        sessionDao.deleteSessions(session);
+        sessionDao.deleteAccSensorDataBySession(session.recordId, session.sessionId);
+        sessionDao.deleteGyroSensorDataBySession(session.recordId, session.sessionId);
     }
 
     public void insertAccData(AccSensorData[] data){

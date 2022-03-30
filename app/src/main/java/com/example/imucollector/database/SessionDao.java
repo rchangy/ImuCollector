@@ -32,6 +32,9 @@ public interface SessionDao {
     @Query("SELECT * FROM session ORDER BY timestamp")
     public LiveData<List<Session>> getAllSessions();
 
+    @Query("SELECT * FROM session WHERE timestamp IN (:timestamps)")
+    public Session[] getSelectedSessions(Long... timestamps);
+
     @Query("DELETE FROM session")
     public void deleteAllSessions();
 

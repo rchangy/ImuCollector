@@ -58,15 +58,13 @@ public class DashboardFragment extends Fragment {
     // session table
     private RecyclerView recyclerView;
     private SessionListAdapter adapter;
-    private TableLayout tableLayout;
     private Button buttonDelete;
 
     // export file
     private static final int OPEN_DOCUMENT_TREE = 1;
-    private ArrayList<Session> currentSessions;
-    private ArrayList<CheckBox> checkBoxes;
     private Button buttonExport;
 
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         homeViewModel =
@@ -81,7 +79,6 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        tableLayout = binding.tableSessionData;
         buttonExport = binding.buttonExport;
         buttonExport.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -115,7 +112,7 @@ public class DashboardFragment extends Fragment {
     }
 
     public void deleteSessions(){
-        adapter.deleteSelectedSessions();
+        homeViewModel.deleteSessions();
     }
 
     public void exportSessions(){
@@ -125,7 +122,6 @@ public class DashboardFragment extends Fragment {
         // the system file picker when your app creates the document.
         // TODO: initial uri
 //        intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, uriToLoad);
-
 //        startActivityForResult(intent, OPEN_DOCUMENT_TREE);
     }
 
