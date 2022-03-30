@@ -3,6 +3,8 @@ package com.example.imucollector.ui.dashboard;
 import android.app.Activity;
 import android.content.Intent;
 import androidx.databinding.DataBindingUtil;
+
+import android.media.tv.TvInputService;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -23,12 +25,16 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.SavedStateViewModelFactory;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStoreOwner;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.imucollector.R;
 import com.example.imucollector.data.Session;
 import com.example.imucollector.databinding.FragmentDashboardBinding;
 import com.example.imucollector.ui.home.HomeViewModel;
 import com.opencsv.CSVWriter;
+
+import org.w3c.dom.Text;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -50,6 +56,8 @@ public class DashboardFragment extends Fragment {
     private FragmentDashboardBinding binding;
 
     // session table
+    private RecyclerView recyclerView;
+    private SessionListAdapter adapter;
     private TableLayout tableLayout;
     private Button buttonDelete;
 
@@ -88,7 +96,16 @@ public class DashboardFragment extends Fragment {
                 deleteSessions();
             }
         });
-        new RefreshSessionTask().execute();
+
+        recyclerView = binding.recyclerView;
+        adapter = new SessionListAdapter(new SessionListAdapter.SessionDiff(), homeViewModel.getSelectedSession());
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        homeViewModel.getAllSessions().observe(getViewLifecycleOwner(), sessions -> {
+            adapter.submitList(sessions);
+        });
+//        new RefreshSessionTask().execute();
     }
 
     @Override
@@ -97,69 +114,8 @@ public class DashboardFragment extends Fragment {
         binding = null;
     }
 
-    private void refreshTableView(Session[] sessions){
-        currentSessions = new ArrayList<>(sessions.length);
-        checkBoxes = new ArrayList<>(sessions.length);
-        DateFormat df = DateFormat.getDateInstance();
-
-        Log.d(LOG_TAG, "creating session table, total " + currentSessions.size() + " sessions");
-
-        // first row
-        TableRow row1 = new TableRow(getContext());
-        TextView tvBlank = new TextView(getContext());
-        tvBlank.setText("");
-        TextView tvRecordId = new TextView(getContext());
-        tvRecordId.setText("Record Id");
-        TextView tvSessionId = new TextView(getContext());
-        tvSessionId.setText("Session Id");
-        TextView tvDate = new TextView(getContext());
-        tvDate.setText("Date");
-
-        row1.addView(tvBlank);
-        row1.addView(tvRecordId);
-        row1.addView(tvSessionId);
-        row1.addView(tvDate);
-
-        tableLayout.addView(row1);
-
-        for(Session session : sessions){
-            TableRow row = new TableRow(getContext());
-
-            CheckBox checkBox = new CheckBox(getContext());
-            row.addView(checkBox);
-
-            TextView tv = new TextView(getContext());
-            String recordId = String.valueOf(session.getRecordId());
-            tv.setText(recordId);
-            row.addView(tv);
-
-            tv = new TextView(getContext());
-            String sessionId = String.valueOf(session.getSessionId());
-            tv.setText(sessionId);
-            row.addView(tv);
-
-            tv = new TextView(getContext());
-            String sessionDate = df.format(session.getDate());
-            tv.setText(sessionDate);
-            row.addView(tv);
-
-            tableLayout.addView(row);
-            currentSessions.add(session);
-            checkBoxes.add(checkBox);
-        }
-    }
-
     public void deleteSessions(){
-        ArrayList<Session> deleteSessions = new ArrayList<>();
-        for(int i = 0; i < checkBoxes.size(); i++){
-            if(checkBoxes.get(i).isChecked()){
-                deleteSessions.add(currentSessions.get(i));
-            }
-        }
-        if(deleteSessions.size() > 0){
-
-            new DeleteSessionTask().execute((Session[]) deleteSessions.toArray(new Session[0]));
-        }
+        adapter.deleteSelectedSessions();
     }
 
     public void exportSessions(){
@@ -185,47 +141,48 @@ public class DashboardFragment extends Fragment {
 //        }
 //    }
 
-    private class RefreshSessionTask extends AsyncTask<Void, Void, Void> {
-        Session[] sessions;
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            tableLayout.removeAllViews();
-        }
+//    private class RefreshSessionTask extends AsyncTask<Void, Void, Void> {
+//        Session[] sessions;
+//        @Override
+//        protected void onPreExecute() {
+//            super.onPreExecute();
+//            tableLayout.removeAllViews();
+//        }
+//
+//        @Override
+//        protected Void doInBackground(Void... voids) {
+//            sessions = homeViewModel.getAllSessionData();
+//            return null;
+//        }
+//
+//        @Override
+//        protected void onPostExecute(Void unused) {
+//            super.onPostExecute(unused);
+//            if(sessions != null) refreshTableView(sessions);
+//        }
+//    }
 
-        @Override
-        protected Void doInBackground(Void... voids) {
-            sessions = homeViewModel.getAllSessionData();
-            return null;
-        }
+//    private class DeleteSessionTask extends AsyncTask<Session, Void, Void>{
+//        Session[] remainingSessions;
+//
+//        @Override
+//        protected void onPreExecute() {
+//            super.onPreExecute();
+//            tableLayout.removeAllViews();
+//        }
+//
+//        @Override
+//        protected Void doInBackground(Session... sessions) {
+//            homeViewModel.deleteSessions(sessions);
+//            remainingSessions = homeViewModel.getAllSessionData();
+//            return null;
+//        }
+//
+//        @Override
+//        protected void onPostExecute(Void unused) {
+//            super.onPostExecute(unused);
+//            if(remainingSessions != null) refreshTableView(remainingSessions);
+//        }
+//    }
 
-        @Override
-        protected void onPostExecute(Void unused) {
-            super.onPostExecute(unused);
-            if(sessions != null) refreshTableView(sessions);
-        }
-    }
-
-    private class DeleteSessionTask extends AsyncTask<Session, Void, Void>{
-        Session[] remainingSessions;
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            tableLayout.removeAllViews();
-        }
-
-        @Override
-        protected Void doInBackground(Session... sessions) {
-            homeViewModel.deleteSessions(sessions);
-            remainingSessions = homeViewModel.getAllSessionData();
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void unused) {
-            super.onPostExecute(unused);
-            if(remainingSessions != null) refreshTableView(remainingSessions);
-        }
-    }
 }

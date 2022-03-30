@@ -1,18 +1,16 @@
 package com.example.imucollector.ui.home;
 
-import android.app.Activity;
 import android.content.Intent;
 import androidx.databinding.DataBindingUtil;
-import android.net.Uri;
+
 import android.os.Bundle;
-import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.NumberPicker;
-import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -21,10 +19,12 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStoreOwner;
 
 import com.example.imucollector.R;
+import com.example.imucollector.data.Session;
 import com.example.imucollector.databinding.FragmentHomeBinding;
-import com.example.imucollector.service.MotionDataService;
 import com.google.android.material.slider.Slider;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -38,6 +38,15 @@ slider 調整 sample rate
 public class HomeFragment extends Fragment {
 
     private static final String LOG_TAG = "HomeFragment";
+
+    public static final String BROADCAST_INTENT_ACTION = "StartStopSession";
+    public static final String INTENT_EXTRA_KEY_ACTION = "Action";
+    public static final String INTENT_EXTRA_ACTION_START = "Start";
+    public static final String INTENT_EXTRA_ACTION_STOP = "Stop";
+    public static final String INTENT_EXTRA_KEY_SESSION_ID = "SessionId";
+    public static final String INTENT_EXTRA_KEY_RECORD_ID = "RecordId";
+    public static final String INTENT_EXTRA_KEY_FREQ = "Freq";
+    public static final String INTENT_EXTRA_KEY_TIMESTAMP = "Timestamp";
 
     private HomeViewModel homeViewModel;
     private FragmentHomeBinding binding;
@@ -65,6 +74,7 @@ public class HomeFragment extends Fragment {
 
     private Button buttonTimer;
     private Intent intent;
+
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -98,14 +108,18 @@ public class HomeFragment extends Fragment {
     }
 
     public void startStopTimer(){
-        homeViewModel.startStopTimer();
-        if(homeViewModel.isCollecting.getValue()){
+        if(!homeViewModel.isCollecting.getValue()){
+            homeViewModel.startStopTimer();
             Log.d(LOG_TAG, "start timer");
-            intent = new Intent(getContext(), MotionDataService.class);
-            intent.putExtra("freq", homeViewModel.currentFreq.getValue());
-            intent.putExtra("recordId", homeViewModel.currentRecordId.getValue());
-            intent.putExtra("sessionId", homeViewModel.currentSessionId.getValue());
-//                            getContext().startForegroundService(intent);
+            // TODO: broadcast to service
+            Intent intent = new Intent(BROADCAST_INTENT_ACTION);
+            intent.putExtra(INTENT_EXTRA_KEY_ACTION, INTENT_EXTRA_ACTION_START);
+            intent.putExtra(INTENT_EXTRA_KEY_RECORD_ID, homeViewModel.currentRecordId.getValue());
+            intent.putExtra(INTENT_EXTRA_KEY_SESSION_ID, homeViewModel.currentSessionId.getValue());
+            intent.putExtra(INTENT_EXTRA_KEY_FREQ, homeViewModel.currentFreq.getValue());
+            intent.putExtra(INTENT_EXTRA_KEY_TIMESTAMP, homeViewModel.getSessionStartTimestamp());
+            getContext().sendBroadcast(intent);
+            timer = new Timer();
             timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
@@ -116,14 +130,12 @@ public class HomeFragment extends Fragment {
         }
         else{
             Log.d(LOG_TAG, "stop timer");
-//          getContext().stopService(intent);
-            homeViewModel.timerText.setValue("00:00:000");
+            Intent intent = new Intent(BROADCAST_INTENT_ACTION);
+            intent.putExtra(INTENT_EXTRA_KEY_ACTION, INTENT_EXTRA_ACTION_STOP);
+            getContext().sendBroadcast(intent);
+
             timer.cancel();
-            timer = new Timer();
-
-
-            // test dashboard ui
-            homeViewModel.saveFalseSession();
+            homeViewModel.startStopTimer();
         }
     }
 

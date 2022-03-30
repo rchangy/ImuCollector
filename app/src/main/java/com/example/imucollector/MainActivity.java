@@ -1,16 +1,17 @@
 package com.example.imucollector;
 
+import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.imucollector.database.SessionRepository;
+import com.example.imucollector.sensor.MotionDataService;
 import com.example.imucollector.ui.home.HomeViewModel;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import androidx.lifecycle.SavedStateViewModelFactory;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
@@ -24,6 +25,8 @@ import com.example.imucollector.databinding.ActivityMainBinding;
 public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private HomeViewModel homeViewModel;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,12 +45,20 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
         NavigationUI.setupWithNavController(binding.navView, navController);
 
+        startService(new Intent(this, MotionDataService.class));
         homeViewModel = new ViewModelProvider((ViewModelStoreOwner) this, new SavedStateViewModelFactory(getApplication(), this)).get(HomeViewModel.class);
     }
 
     @Override
     protected void onPause() {
-        super.onPause();
         homeViewModel.save();
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        stopService(new Intent(this, MotionDataService.class));
+        SessionRepository.getInstance().onActivityDestroyed();
+        super.onDestroy();
     }
 }

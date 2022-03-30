@@ -1,6 +1,7 @@
 package com.example.imucollector.ui.home;
 
 import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 
@@ -16,13 +17,15 @@ import androidx.lifecycle.SavedStateHandle;
 import androidx.preference.PreferenceManager;
 
 import com.example.imucollector.data.Session;
-import com.example.imucollector.data.SessionDao;
-import com.example.imucollector.data.SessionDatabase;
+import com.example.imucollector.database.SessionRepository;
 import com.opencsv.CSVWriter;
 
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 /*
 存所有 UI 相關資料的地方（因為 view model 存活時間會比 activity 長、也不會因為手機轉方向就重生一個）
 因為使用 data binding 所以 xml 檔案可以直接拿到這裡的資料（不用透過 activity 或 fragment 去設定）， data binding 的資料必須為 livedata
@@ -41,73 +44,74 @@ public class HomeViewModel extends AndroidViewModel{
 
     public MutableLiveData<Boolean> isCollecting = new MutableLiveData<>(false);
 
-    // database
-    private SessionDatabase db = SessionDatabase.getInstance(getApplication());
-    private SessionDao sessionDao = db.sessionDao();
 
     // timer for ui
     public MutableLiveData<String> timerText = new MutableLiveData<>("00 : 00 : 000");
     private long sessionStartTimestamp;
 
     // saved state
-    private final String CURRENT_FREQ = "currentFreq";
-    private final String CURRENT_SESSION_ID = "currentSessionId";
-    private final String CURRENT_RECORD_ID = "currentRecordId";
-    private final String SESSION_START_TIMESTAMP = "sessionStartTimestamp";
-    private final String IS_COLLECTING = "isCollecting";
+    private final String PREFERENCE_FILE_KEY_FREQ = "currentFreq";
+    private final String PREFERENCE_FILE_KEY_SESSION_ID = "currentSessionId";
+    private final String PREFERENCE_FILE_KEY_RECORD_ID = "currentRecordId";
+    private final String PREFERENCE_FILE_KEY_TIMESTAMP = "sessionStartTimestamp";
+    private final String PREFERENCE_FILE_KEY_IS_COLLECTING = "isCollecting";
+
+    private List<Session> selectedSession = new ArrayList<>();
 
     public HomeViewModel(Application application, SavedStateHandle savedStateHandle) {
         super(application);
         sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplication());
         editor = sharedPref.edit();
         this.savedStateHandle = savedStateHandle;
+//        allSessions = SessionRepository.getInstance().getAllSessions();
         load();
         Log.d(LOG_TAG, "view model init with freq: " + currentFreq.getValue() + ", sessionId: " + currentSessionId.getValue() + ", recordId: " + currentRecordId.getValue());
     }
 
     public void load(){
         Integer defaultFreq = 60;
-        if(savedStateHandle.contains(CURRENT_FREQ)) currentFreq = savedStateHandle.getLiveData(CURRENT_FREQ);
+        if(savedStateHandle.contains(PREFERENCE_FILE_KEY_FREQ)) currentFreq = savedStateHandle.getLiveData(PREFERENCE_FILE_KEY_FREQ);
         else {
             currentFreq = new MutableLiveData<>();
-            setCurrentFreq(sharedPref.getInt(CURRENT_FREQ, defaultFreq));
+            setCurrentFreq(sharedPref.getInt(PREFERENCE_FILE_KEY_FREQ, defaultFreq));
         }
-        if(savedStateHandle.contains(CURRENT_SESSION_ID)) currentSessionId = savedStateHandle.getLiveData(CURRENT_SESSION_ID);
+        if(savedStateHandle.contains(PREFERENCE_FILE_KEY_SESSION_ID)) currentSessionId = savedStateHandle.getLiveData(PREFERENCE_FILE_KEY_SESSION_ID);
         else {
             currentSessionId = new MutableLiveData<>();
-            setCurrentSessionId(sharedPref.getInt(CURRENT_SESSION_ID, 0));
+            setCurrentSessionId(sharedPref.getInt(PREFERENCE_FILE_KEY_SESSION_ID, 0));
         }
-        if(savedStateHandle.contains(CURRENT_RECORD_ID)) currentRecordId = savedStateHandle.getLiveData(CURRENT_RECORD_ID);
+        if(savedStateHandle.contains(PREFERENCE_FILE_KEY_RECORD_ID)) currentRecordId = savedStateHandle.getLiveData(PREFERENCE_FILE_KEY_RECORD_ID);
         else {
             currentRecordId = new MutableLiveData<>();
-            setCurrentRecordId(sharedPref.getInt(CURRENT_RECORD_ID, 0));
+            setCurrentRecordId(sharedPref.getInt(PREFERENCE_FILE_KEY_RECORD_ID, 0));
         }
-        if(savedStateHandle.contains(SESSION_START_TIMESTAMP)) sessionStartTimestamp = savedStateHandle.get(SESSION_START_TIMESTAMP);
-        else setSessionStartTimestamp(sharedPref.getLong(SESSION_START_TIMESTAMP, 0));
-        if(savedStateHandle.contains(IS_COLLECTING)) isCollecting = savedStateHandle.getLiveData(IS_COLLECTING);
+        if(savedStateHandle.contains(PREFERENCE_FILE_KEY_TIMESTAMP)) sessionStartTimestamp = savedStateHandle.get(PREFERENCE_FILE_KEY_TIMESTAMP);
+        else setSessionStartTimestamp(sharedPref.getLong(PREFERENCE_FILE_KEY_TIMESTAMP, 0));
+        if(savedStateHandle.contains(PREFERENCE_FILE_KEY_IS_COLLECTING)) isCollecting = savedStateHandle.getLiveData(PREFERENCE_FILE_KEY_IS_COLLECTING);
         else {
             isCollecting = new MutableLiveData<>();
-            setIsCollecting(sharedPref.getBoolean(IS_COLLECTING, false));
+            setIsCollecting(sharedPref.getBoolean(PREFERENCE_FILE_KEY_IS_COLLECTING, false));
         }
+        Log.d(LOG_TAG, "load data, is collecting: " + isCollecting.getValue());
     }
 
     public void save(){
-        editor.putInt(CURRENT_SESSION_ID, currentSessionId.getValue());
-        editor.putInt(CURRENT_RECORD_ID, currentRecordId.getValue());
-        editor.putInt(CURRENT_FREQ, currentFreq.getValue());
-        editor.putLong(SESSION_START_TIMESTAMP, sessionStartTimestamp);
+        editor.putInt(PREFERENCE_FILE_KEY_SESSION_ID, currentSessionId.getValue());
+        editor.putInt(PREFERENCE_FILE_KEY_RECORD_ID, currentRecordId.getValue());
+        editor.putInt(PREFERENCE_FILE_KEY_FREQ, currentFreq.getValue());
+        editor.putLong(PREFERENCE_FILE_KEY_TIMESTAMP, sessionStartTimestamp);
         editor.apply();
     }
 
     // for slider on change
     public void setCurrentFreq(int freq){
         currentFreq.setValue(freq);
-        savedStateHandle.set(CURRENT_FREQ, freq);
+        savedStateHandle.set(PREFERENCE_FILE_KEY_FREQ, freq);
     }
 
     public void setCurrentSessionId(int id){
         currentSessionId.setValue(id);
-        savedStateHandle.set(CURRENT_SESSION_ID, id);
+        savedStateHandle.set(PREFERENCE_FILE_KEY_SESSION_ID, id);
     }
 
     private void incCurrentSessionId(){
@@ -119,22 +123,28 @@ public class HomeViewModel extends AndroidViewModel{
 
     public void setCurrentRecordId(int id){
         currentRecordId.setValue(id);
-        savedStateHandle.set(CURRENT_RECORD_ID, id);
+        savedStateHandle.set(PREFERENCE_FILE_KEY_RECORD_ID, id);
     }
 
     private void setIsCollecting(boolean collecting){
         isCollecting.setValue(collecting);
-        savedStateHandle.set(IS_COLLECTING, collecting);
+        savedStateHandle.set(PREFERENCE_FILE_KEY_IS_COLLECTING, collecting);
     }
 
     private void setSessionStartTimestamp(long ts){
         sessionStartTimestamp = ts;
-        savedStateHandle.set(SESSION_START_TIMESTAMP, ts);
+        savedStateHandle.set(PREFERENCE_FILE_KEY_TIMESTAMP, ts);
     }
 
     public long getSessionStartTimestamp(){
         return sessionStartTimestamp;
     }
+
+    public LiveData<List<Session>> getAllSessions() {
+        return SessionRepository.getInstance().getAllSessions();
+    }
+
+    public List<Session> getSelectedSession() { return selectedSession; }
 
     // for button on click
     public void startStopTimer(){
@@ -142,6 +152,7 @@ public class HomeViewModel extends AndroidViewModel{
             // stop timer
             setIsCollecting(false);
             incCurrentSessionId();
+            timerText.setValue("00 : 00 : 000");
         }
         else{
             // start timer
@@ -155,13 +166,9 @@ public class HomeViewModel extends AndroidViewModel{
         super.onCleared();
     }
 
-
-    public Session[] getAllSessionData(){
-        return sessionDao.getAllSessions();
-    }
-
-    public void deleteSessions(Session... sessions){
-        sessionDao.deleteSessions(sessions);
+    public void deleteSessions(){
+        SessionRepository.getInstance().getSessionDao().deleteSessions(selectedSession.toArray(new Session[0]));
+        selectedSession.clear();
     }
 
     public void sessionsToCsv(Uri dirUri){
@@ -193,7 +200,9 @@ public class HomeViewModel extends AndroidViewModel{
                 // TODO: file cannot be created
                 return -1;
             }
-            Session[] sessions = sessionDao.getAllSessions();
+            // TODO
+            Session[] sessions = null;
+//            Session[] sessions = SessionRepository.getInstance().getSessionDao().getAllSessions();
             try {
                 // acc
                 String[] header = {"id", "freq", "timestamp", "X", "Y", "Z"};
@@ -212,7 +221,7 @@ public class HomeViewModel extends AndroidViewModel{
                 }
                 writer.close();
 
-                sessionDao.deleteSessions(sessions);
+                SessionRepository.getInstance().getSessionDao().deleteSessions(sessions);
             }
             catch (IOException e) {
                 e.printStackTrace();
@@ -227,15 +236,15 @@ public class HomeViewModel extends AndroidViewModel{
         }
     }
 
-    public void saveFalseSession(){
-        new SaveSessionTask().execute();
-    }
-    private class SaveSessionTask extends AsyncTask<Void, Void, Void>{
-        @Override
-        protected Void doInBackground(Void... voids) {
-            Session testSession = new Session(sessionStartTimestamp, currentFreq.getValue(), currentRecordId.getValue(), currentSessionId.getValue());
-            sessionDao.insertSessions(testSession);
-            return null;
-        }
-    }
+//    public void saveFalseSession(){
+//        new SaveSessionTask().execute();
+//    }
+//    private class SaveSessionTask extends AsyncTask<Void, Void, Void>{
+//        @Override
+//        protected Void doInBackground(Void... voids) {
+//            Session testSession = new Session(sessionStartTimestamp, currentFreq.getValue(), currentRecordId.getValue(), currentSessionId.getValue());
+//            DBController.getInstance().getSessionDao().insertSessions(testSession);
+//            return null;
+//        }
+//    }
 }

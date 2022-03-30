@@ -1,14 +1,20 @@
-package com.example.imucollector.data;
+package com.example.imucollector.database;
 
 import android.content.Context;
 
 import androidx.annotation.NonNull;
-import androidx.room.AutoMigration;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
+
+import com.example.imucollector.data.AccSensorData;
+import com.example.imucollector.data.GyroSensorData;
+import com.example.imucollector.data.Session;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /*
 room database
@@ -21,6 +27,8 @@ sensor data 存的時候會存 record id, session id, timestamp，取資料的�
 public abstract class SessionDatabase extends RoomDatabase {
     private static final String DB_NAME = "sessionDatabase.db";
     private static volatile SessionDatabase instance;
+    private static final int NUMBER_OF_THREADS = 1;
+    static final ExecutorService pool = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
 
     protected SessionDatabase() { };
     public static synchronized SessionDatabase getInstance(Context context){
