@@ -27,10 +27,6 @@ import com.example.imucollector.database.SessionDatabase;
 
 import com.example.imucollector.ui.home.HomeFragment;
 
-/*
-因為錄製過程中應該會關螢幕，要拿 wakelock (TODO)
-錄製開始時會啟動這個 service，用這個 service 註冊 sensor listener
- */
 public class MotionDataService extends Service {
 
     private static final String LOG_TAG = "MotionDataService";

@@ -1,6 +1,9 @@
 package com.example.imucollector;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -47,6 +50,11 @@ public class MainActivity extends AppCompatActivity {
 
         startService(new Intent(this, MotionDataService.class));
         homeViewModel = new ViewModelProvider((ViewModelStoreOwner) this, new SavedStateViewModelFactory(getApplication(), this)).get(HomeViewModel.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1000);
+        }
     }
 
     @Override

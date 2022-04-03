@@ -44,6 +44,7 @@
             app:layout_constraintTop_toBottomOf="@id/text_dashboard"
             app:layout_constraintStart_toStartOf="parent"
             android:text="delete"
+            android:enabled="@{!homeViewModel.isCollecting}"
             />
 
         <Button
@@ -54,6 +55,7 @@
             app:layout_constraintTop_toBottomOf="@id/text_dashboard"
             app:layout_constraintEnd_toEndOf="parent"
             android:text="export"
+            android:enabled="@{!homeViewModel.isCollecting}"
             />
 
         <androidx.recyclerview.widget.RecyclerView

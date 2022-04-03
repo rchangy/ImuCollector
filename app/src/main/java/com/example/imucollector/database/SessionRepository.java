@@ -46,6 +46,11 @@ public class SessionRepository {
         });
     }
 
+    public Session[] getSelectedSessionsInBackground(Long[] timestamps){
+        Session[] sessions = sessionDao.getSelectedSessions(timestamps);
+        return sessions;
+    }
+
     public void deleteSessions(Long[] timestamps){
         SessionDatabase.pool.execute(()->{
             Session[] sessions = sessionDao.getSelectedSessions(timestamps);
@@ -77,5 +82,13 @@ public class SessionRepository {
         SessionDatabase.pool.execute(() ->{
             sessionDao.insertSessions(session);
         });
+    }
+
+    public AccSensorData[] getSessionAccDataInBackground(Session session){
+        return sessionDao.getAccSensorDataBySession(session.recordId, session.sessionId);
+    }
+
+    public GyroSensorData[] getSessionGyroDataInBackground(Session session){
+        return sessionDao.getGyroSensorDataBySession(session.recordId, session.sessionId);
     }
 }

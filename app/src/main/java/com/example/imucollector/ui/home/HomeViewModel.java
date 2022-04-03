@@ -9,6 +9,11 @@ import android.app.Application;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.os.Environment;
+import android.os.ParcelFileDescriptor;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.util.Log;
 
 import androidx.documentfile.provider.DocumentFile;
@@ -16,15 +21,26 @@ import androidx.documentfile.provider.DocumentFile;
 import androidx.lifecycle.SavedStateHandle;
 import androidx.preference.PreferenceManager;
 
+import com.example.imucollector.data.AccSensorData;
+import com.example.imucollector.data.GyroSensorData;
 import com.example.imucollector.data.Session;
 import com.example.imucollector.database.SessionRepository;
 import com.opencsv.CSVWriter;
 
 
+import org.apache.commons.lang3.mutable.Mutable;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 /*
 存所有 UI 相關資料的地方（因為 view model 存活時間會比 activity 長、也不會因為手機轉方向就重生一個）
@@ -33,6 +49,7 @@ import java.util.List;
  */
 public class HomeViewModel extends AndroidViewModel{
     private static final String LOG_TAG = "HomeViewModel";
+    private static final int MAX_SESSION = 1000;
 
     private SharedPreferences sharedPref;
     private SharedPreferences.Editor editor;
@@ -43,6 +60,8 @@ public class HomeViewModel extends AndroidViewModel{
     public MutableLiveData<Integer> currentRecordId;
 
     public MutableLiveData<Boolean> isCollecting = new MutableLiveData<>(false);
+
+    public MutableLiveData<Boolean> isExporting = new MutableLiveData<>(false);
 
 
     // timer for ui
@@ -63,7 +82,6 @@ public class HomeViewModel extends AndroidViewModel{
         sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplication());
         editor = sharedPref.edit();
         this.savedStateHandle = savedStateHandle;
-//        allSessions = SessionRepository.getInstance().getAllSessions();
         load();
         Log.d(LOG_TAG, "view model init with freq: " + currentFreq.getValue() + ", sessionId: " + currentSessionId.getValue() + ", recordId: " + currentRecordId.getValue());
     }
@@ -116,10 +134,9 @@ public class HomeViewModel extends AndroidViewModel{
 
     private void incCurrentSessionId(){
         int id = currentSessionId.getValue() + 1;
+        if(id > MAX_SESSION) id = 0;
         setCurrentSessionId(id);
     }
-
-    public void resetCurrentSessionId() {setCurrentFreq(0);}
 
     public void setCurrentRecordId(int id){
         currentRecordId.setValue(id);
@@ -146,7 +163,6 @@ public class HomeViewModel extends AndroidViewModel{
 
     public List<Long> getSelectedSession() { return selectedSession; }
 
-    // for button on click
     public void startStopTimer(){
         if(isCollecting.getValue()){
             // stop timer
@@ -171,8 +187,12 @@ public class HomeViewModel extends AndroidViewModel{
         selectedSession.clear();
     }
 
-    public void sessionsToCsv(Uri dirUri){
-        new ExportFileTask().execute(dirUri);
+    public void exportSessions(Uri uri){
+        if(uri == null){
+            Log.d(LOG_TAG, "export failed: null result uri");
+            return;
+        }
+        new ExportFileTask().execute(uri);
     }
 
     public String getTimeText(){
@@ -186,65 +206,85 @@ public class HomeViewModel extends AndroidViewModel{
 
     private String formatTime(int ms, int seconds, int minutes) { return String.format("%02d",minutes) + " : " + String.format("%02d",seconds) + " : " + String.format("%03d",ms); }
 
+
     private class ExportFileTask extends AsyncTask<Uri, Void, Integer>{
+        private final String ACC_DIR_NAME = "Accelerometer";
+        private final String GYRO_DIR_NAME = "Gyroscope";
+
         @Override
-        protected Integer doInBackground(Uri... uris) {
-            Uri dirUri = uris[0];
-            String accFilename = "";
-            String gyroFilename = "";
-            // create file
-            DocumentFile documentFile = DocumentFile.fromTreeUri(getApplication(), dirUri);
-            DocumentFile accFile = documentFile.createFile("text/csv", accFilename);
-            DocumentFile gyroFile = documentFile.createFile("text/csv", gyroFilename);
-            if(accFile == null || gyroFile == null){
-                // TODO: file cannot be created
-                return -1;
+        protected Integer doInBackground(Uri... resultUri) {
+            Uri dirUri = resultUri[0];
+            DocumentFile imuCollectorDocumentFile = DocumentFile.fromTreeUri(getApplication(), dirUri);
+            Log.d(LOG_TAG, imuCollectorDocumentFile.getUri().getPath());
+            DocumentFile accDirDocumentFile = imuCollectorDocumentFile.findFile(ACC_DIR_NAME);
+            if(accDirDocumentFile == null){
+                accDirDocumentFile = imuCollectorDocumentFile.createDirectory(ACC_DIR_NAME);
             }
-            // TODO
-            Session[] sessions = null;
-//            Session[] sessions = SessionRepository.getInstance().getSessionDao().getAllSessions();
-            try {
-                // acc
-                String[] header = {"id", "freq", "timestamp", "X", "Y", "Z"};
-                CSVWriter writer = new CSVWriter( new FileWriter(accFile.getUri().getPath()));
-                writer.writeNext(header);
-                for(Session session : sessions){
-//                    writer.writeAll(session.formatAccData());
-                }
-                writer.close();
-
-                // gyro
-                writer = new CSVWriter( new FileWriter(gyroFile.getUri().getPath()));
-                writer.writeNext(header);
-                for(Session session : sessions){
-//                    writer.writeAll(session.formatGyroData());
-                }
-                writer.close();
-
-                SessionRepository.getInstance().getSessionDao().deleteSessions(sessions);
+            DocumentFile gyroDirDocumentFile = imuCollectorDocumentFile.findFile(GYRO_DIR_NAME);
+            if(gyroDirDocumentFile == null){
+                gyroDirDocumentFile = imuCollectorDocumentFile.createDirectory(GYRO_DIR_NAME);
             }
-            catch (IOException e) {
+            String currentTime = String.valueOf(System.currentTimeMillis());
+            String accFilename = "acc_" + currentTime;
+            String gyroFilename = "gyro_" + currentTime;
+
+            String[] header = {"record id", "session id", "timestamp", "X", "Y", "Z"};
+
+            try{
+                Session[] sessions;
+                if(selectedSession.isEmpty()){
+                    sessions = getAllSessions().getValue().toArray(new Session[0]);
+                }
+                else{
+                    sessions = SessionRepository.getInstance().getSelectedSessionsInBackground(selectedSession.toArray(new Long[0]));
+                }
+
+                DocumentFile accDocumentFile = accDirDocumentFile.createFile("text/csv", accFilename);
+                Uri accUri = accDocumentFile.getUri();
+                ParcelFileDescriptor accPdf = getApplication().getContentResolver().openFileDescriptor(accUri, "w");
+                FileOutputStream accOutputStream = new FileOutputStream(accPdf.getFileDescriptor());
+                accOutputStream.write(stringJoiner(header).getBytes());
+                for(Session session : sessions){
+                    AccSensorData[] accData = SessionRepository.getInstance().getSessionAccDataInBackground(session);
+                    for(AccSensorData data : accData){
+                        accOutputStream.write(stringJoiner(data.formatData()).getBytes());
+                    }
+                }
+                accOutputStream.close();
+                accPdf.close();
+
+                DocumentFile gyroDocumentFile = gyroDirDocumentFile.createFile("text/csv", gyroFilename);
+                Uri gyroUri = gyroDocumentFile.getUri();
+                ParcelFileDescriptor gyroPdf = getApplication().getContentResolver().openFileDescriptor(gyroUri, "w");
+                FileOutputStream gyroOutputStream = new FileOutputStream(gyroPdf.getFileDescriptor());
+                gyroOutputStream.write(stringJoiner(header).getBytes());
+                for(Session session : sessions){
+                    GyroSensorData[] gyroData = SessionRepository.getInstance().getSessionGyroDataInBackground(session);
+                    for(GyroSensorData data : gyroData){
+                        gyroOutputStream.write(stringJoiner(data.formatData()).getBytes());
+                    }
+                }
+                gyroOutputStream.close();
+                gyroPdf.close();
+            }
+            catch (Exception e){
                 e.printStackTrace();
             }
+            Log.d(LOG_TAG, "export success");
             return 0;
         }
-
         @Override
         protected void onPostExecute(Integer integer) {
             super.onPostExecute(integer);
             // TODO: process result
         }
-    }
 
-//    public void saveFalseSession(){
-//        new SaveSessionTask().execute();
-//    }
-//    private class SaveSessionTask extends AsyncTask<Void, Void, Void>{
-//        @Override
-//        protected Void doInBackground(Void... voids) {
-//            Session testSession = new Session(sessionStartTimestamp, currentFreq.getValue(), currentRecordId.getValue(), currentSessionId.getValue());
-//            DBController.getInstance().getSessionDao().insertSessions(testSession);
-//            return null;
-//        }
-//    }
+        public String stringJoiner(String[] arr) {
+            StringJoiner joiner = new StringJoiner(",", "", "\n");
+            for (String el : arr) {
+                joiner.add(el);
+            }
+            return joiner.toString();
+        }
+    }
 }

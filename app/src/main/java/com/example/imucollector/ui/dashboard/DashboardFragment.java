@@ -2,12 +2,18 @@ package com.example.imucollector.ui.dashboard;
 
 import android.app.Activity;
 import android.content.Intent;
+
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.databinding.DataBindingUtil;
 
 import android.media.tv.TvInputService;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -63,6 +69,8 @@ public class DashboardFragment extends Fragment {
     // export file
     private static final int OPEN_DOCUMENT_TREE = 1;
     private Button buttonExport;
+    private ActivityResultLauncher<Uri> resultLauncher;
+
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -102,7 +110,12 @@ public class DashboardFragment extends Fragment {
         homeViewModel.getAllSessions().observe(getViewLifecycleOwner(), sessions -> {
             adapter.submitList(sessions);
         });
-//        new RefreshSessionTask().execute();
+        resultLauncher = registerForActivityResult(new ActivityResultContracts.OpenDocumentTree(), new ActivityResultCallback<Uri>() {
+            @Override
+            public void onActivityResult(Uri result) {
+                homeViewModel.exportSessions(result);
+            }
+        });
     }
 
     @Override
@@ -116,69 +129,7 @@ public class DashboardFragment extends Fragment {
     }
 
     public void exportSessions(){
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-
-        // Optionally, specify a URI for the directory that should be opened in
-        // the system file picker when your app creates the document.
-        // TODO: initial uri
-//        intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, uriToLoad);
-//        startActivityForResult(intent, OPEN_DOCUMENT_TREE);
+        resultLauncher.launch(null);
     }
-
-//    @Override
-//    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-//        super.onActivityResult(requestCode, resultCode, data);
-//        if(requestCode == OPEN_DOCUMENT_TREE && resultCode == Activity.RESULT_OK){
-//            Uri uri = null;
-//            if(data != null){
-//                uri = data.getData();
-//                homeViewModel.sessionsToCsv(uri);
-//            }
-//        }
-//    }
-
-//    private class RefreshSessionTask extends AsyncTask<Void, Void, Void> {
-//        Session[] sessions;
-//        @Override
-//        protected void onPreExecute() {
-//            super.onPreExecute();
-//            tableLayout.removeAllViews();
-//        }
-//
-//        @Override
-//        protected Void doInBackground(Void... voids) {
-//            sessions = homeViewModel.getAllSessionData();
-//            return null;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(Void unused) {
-//            super.onPostExecute(unused);
-//            if(sessions != null) refreshTableView(sessions);
-//        }
-//    }
-
-//    private class DeleteSessionTask extends AsyncTask<Session, Void, Void>{
-//        Session[] remainingSessions;
-//
-//        @Override
-//        protected void onPreExecute() {
-//            super.onPreExecute();
-//            tableLayout.removeAllViews();
-//        }
-//
-//        @Override
-//        protected Void doInBackground(Session... sessions) {
-//            homeViewModel.deleteSessions(sessions);
-//            remainingSessions = homeViewModel.getAllSessionData();
-//            return null;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(Void unused) {
-//            super.onPostExecute(unused);
-//            if(remainingSessions != null) refreshTableView(remainingSessions);
-//        }
-//    }
 
 }
