@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.imucollector.database.SessionRepository;
@@ -26,6 +28,7 @@ import com.example.imucollector.databinding.ActivityMainBinding;
  */
 
 public class MainActivity extends AppCompatActivity {
+    private static final String LOG_TAG = "MainActivity";
     private ActivityMainBinding binding;
     private HomeViewModel homeViewModel;
 
@@ -48,8 +51,8 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
         NavigationUI.setupWithNavController(binding.navView, navController);
 
-        startService(new Intent(this, MotionDataService.class));
         homeViewModel = new ViewModelProvider((ViewModelStoreOwner) this, new SavedStateViewModelFactory(getApplication(), this)).get(HomeViewModel.class);
+        startService(new Intent(this, MotionDataService.class));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -58,13 +61,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if(!MotionDataService.isServiceRunning()){
+            startService(new Intent(this, MotionDataService.class));
+        }
+    }
+
+    @Override
     protected void onPause() {
         homeViewModel.save();
+        Log.d(LOG_TAG, "on pause");
         super.onPause();
     }
 
     @Override
     protected void onDestroy() {
+        Log.d(LOG_TAG, "on destroy");
         stopService(new Intent(this, MotionDataService.class));
         SessionRepository.getInstance().onActivityDestroyed();
         super.onDestroy();

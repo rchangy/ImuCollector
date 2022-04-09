@@ -18,7 +18,7 @@ public class AccSensorData extends SensorData{
 
     @Override
     public String[] formatData() {
-        String[] ret = {String.valueOf(recordId), String.valueOf(sessionId), String.valueOf(timestamp), String.valueOf(x), String.valueOf(y), String.valueOf(z)};
+        String[] ret = {String.valueOf(timestamp), String.valueOf(x), String.valueOf(y), String.valueOf(z)};
         return ret;
     }
 }

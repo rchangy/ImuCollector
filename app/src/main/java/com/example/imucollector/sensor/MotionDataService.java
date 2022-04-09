@@ -30,6 +30,7 @@ import com.example.imucollector.ui.home.HomeFragment;
 public class MotionDataService extends Service {
 
     private static final String LOG_TAG = "MotionDataService";
+    private static boolean isRunning;
 
     // wakelock
     private PowerManager.WakeLock wakeLock;
@@ -78,18 +79,18 @@ public class MotionDataService extends Service {
         super.onCreate();
         scm = new SensorCollectorManager(getApplicationContext());
         sessionRepository = SessionRepository.getInstance();
-        sessionRepository.init(SessionDatabase.getInstance(getApplication()));
         registerReceiver(receiver, new IntentFilter(HomeFragment.BROADCAST_INTENT_ACTION));
 
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "imucollector::WakelockTag");
+        isRunning = true;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-//        startForeground();
         Log.i(LOG_TAG, "start service");
         super.onStartCommand(intent, flags, startId);
+
         return START_STICKY;
     }
 
@@ -100,10 +101,17 @@ public class MotionDataService extends Service {
 
     @Override
     public void onDestroy() {
-//        scm.endSession();
         unregisterReceiver(receiver);
         Log.d(LOG_TAG, "service stopped, unregister listener");
+        isRunning = false;
+        if(wakeLock.isHeld()){
+            wakeLock.release();
+        }
         super.onDestroy();
+    }
+
+    public static boolean isServiceRunning(){
+        return isRunning;
     }
 
     private void startForeground(){

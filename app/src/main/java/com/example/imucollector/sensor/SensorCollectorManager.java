@@ -49,6 +49,7 @@ public class SensorCollectorManager {
 
     private void registerAllSensors(){
         for(SensorCollector sc : sensorCollectors){
+            sc.startNewSession(currentRecordId, currentSessionId);
             sensorManager.registerListener(sc, sc.sensor, sampleRateUs, SensorManager.SENSOR_DELAY_GAME);
         }
     }

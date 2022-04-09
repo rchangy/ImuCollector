@@ -88,6 +88,10 @@ public class SessionRepository {
         return sessionDao.getAccSensorDataBySession(session.recordId, session.sessionId);
     }
 
+    public AccSensorData[] getAllAccDataInBackground(){
+        return sessionDao.getAllAccSensorData();
+    }
+
     public GyroSensorData[] getSessionGyroDataInBackground(Session session){
         return sessionDao.getGyroSensorDataBySession(session.recordId, session.sessionId);
     }
