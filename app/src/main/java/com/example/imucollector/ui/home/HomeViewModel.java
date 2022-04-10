@@ -169,6 +169,7 @@ public class HomeViewModel extends AndroidViewModel{
 
     public List<Long> getSelectedSession() { return selectedSession; }
 
+
     public void startStopTimer(){
         if(isCollecting.getValue()){
             // stop timer

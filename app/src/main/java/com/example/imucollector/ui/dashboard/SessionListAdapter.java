@@ -35,6 +35,23 @@ public class SessionListAdapter extends ListAdapter<Session, SessionViewHolder> 
         return SessionViewHolder.create(parent);
     }
 
+    public boolean selectAll(){
+        boolean ret = true;
+        if(getCurrentList().size() == selectedSession.size()){
+            selectedSession.clear();
+            ret = false;
+        }
+        else{
+            for(Session session: getCurrentList()){
+                if(!selectedSession.contains(session.timestamp)){
+                    selectedSession.add(session.timestamp);
+                }
+            }
+        }
+        notifyDataSetChanged();
+        return ret;
+    }
+
     @Override
     public void onBindViewHolder(@NonNull SessionViewHolder holder, int position) {
         Session current = getItem(position);

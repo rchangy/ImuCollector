@@ -1,12 +1,14 @@
 package com.example.imucollector.ui.dashboard;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.databinding.DataBindingUtil;
 
 import android.media.tv.TvInputService;
@@ -65,11 +67,12 @@ public class DashboardFragment extends Fragment {
     private RecyclerView recyclerView;
     private SessionListAdapter adapter;
     private Button buttonDelete;
+    private CheckBox checkBoxAll;
 
     // export file
-    private static final int OPEN_DOCUMENT_TREE = 1;
     private Button buttonExport;
     private ActivityResultLauncher<Uri> resultLauncher;
+
 
 
     @Override
@@ -116,6 +119,17 @@ public class DashboardFragment extends Fragment {
                 homeViewModel.exportSessions(result);
             }
         });
+
+        checkBoxAll = binding.checkboxAll;
+        checkBoxAll.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                boolean isChecked = adapter.selectAll();
+                checkBoxAll.setChecked(isChecked);
+            }
+        });
+
+
     }
 
     @Override
@@ -125,11 +139,35 @@ public class DashboardFragment extends Fragment {
     }
 
     public void deleteSessions(){
-        homeViewModel.deleteSessions();
+        if(homeViewModel.getSelectedSession().isEmpty()){
+            return;
+        }
+        AlertDialog alertDialog = createDeleteSessionAlertDialog();
+        alertDialog.show();
     }
 
     public void exportSessions(){
         resultLauncher.launch(null);
+    }
+
+    private AlertDialog createDeleteSessionAlertDialog(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Delete Selected Sessions?");
+        builder.setMessage("This action cannot be undone.");
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                homeViewModel.deleteSessions();
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+            }
+        });
+
+        return builder.create();
     }
 
 }

@@ -34,6 +34,13 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.25" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline_hor2"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:orientation="horizontal"
             app:layout_constraintGuide_percent="0.2" />
 
         <Button
@@ -41,7 +48,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            app:layout_constraintBottom_toTopOf="@id/guideline_hor"
+            android:layout_marginBottom="10dp"
+            app:layout_constraintBottom_toTopOf="@id/guideline_hor2"
             app:layout_constraintStart_toStartOf="parent"
             android:text="delete"
             android:enabled="@{!homeViewModel.isCollecting}"
@@ -52,12 +60,52 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            app:layout_constraintBottom_toTopOf="@id/guideline_hor"
+            android:layout_marginBottom="10dp"
+            app:layout_constraintBottom_toTopOf="@id/guideline_hor2"
             app:layout_constraintEnd_toEndOf="parent"
             android:text="export"
             android:enabled="@{!homeViewModel.isCollecting}"
             />
+        <CheckBox
+            android:id="@+id/checkbox_all"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toTopOf="@id/guideline_hor"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginLeft="15dp"
+            />
 
+        <TextView
+            android:id="@+id/text_header_record_id"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toEndOf="@id/checkbox_all"
+            app:layout_constraintBottom_toTopOf="@id/guideline_hor"
+            android:text="Record Id"
+            android:textSize="15sp"
+            android:layout_marginLeft="15dp"
+            android:layout_marginBottom="15dp"
+            />
+        <TextView
+            android:id="@+id/text_header_session_id"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toEndOf="@id/text_header_record_id"
+            app:layout_constraintBottom_toTopOf="@id/guideline_hor"
+            android:text="Session Id"
+            android:textSize="15sp"
+            android:layout_marginBottom="15dp"
+            />
+        <TextView
+            android:id="@+id/text_header_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toEndOf="@id/text_header_session_id"
+            app:layout_constraintBottom_toTopOf="@id/guideline_hor"
+            android:text="Time"
+            android:textSize="15sp"
+            android:layout_marginBottom="15dp"
+            />
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"
             android:layout_width="0dp"
