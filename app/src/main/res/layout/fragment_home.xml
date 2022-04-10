@@ -40,7 +40,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="10dp"
             android:layout_marginEnd="8dp"
             android:text="@string/title"
             android:textAlignment="center"
@@ -59,7 +59,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/guideline_hor" />
 
-        <!-- session info (session id, record id, freq) -->
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_hor2"
             android:layout_width="0dp"
@@ -82,11 +81,11 @@
             android:id="@+id/number_picker_record_id"
             android:layout_width="wrap_content"
             android:layout_height="64dp"
-            android:layout_marginTop="50dp"
+            android:layout_marginTop="-15dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.503"
             app:layout_constraintStart_toEndOf="@id/guideline_ver"
-            app:layout_constraintTop_toBottomOf="@+id/text_time" />
+            app:layout_constraintTop_toBottomOf="@+id/guideline_hor2" />
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_hor3"
@@ -164,14 +163,19 @@
             android:orientation="horizontal"
             app:layout_constraintGuide_percent="0.65" />
 
-
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline_hor6"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.9" />
         <Button
             android:id="@+id/button_timer"
             android:layout_width="120dp"
             android:layout_height="80dp"
             android:text="@{homeViewModel.startStopTimerButtonText}"
             android:textSize="25sp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/guideline_hor6"
             app:layout_constraintTop_toTopOf="@id/guideline_hor5"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

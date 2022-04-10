@@ -32,7 +32,7 @@
         />
     <TextView
         android:id="@+id/session_item_text_timestamp"
-        android:layout_width="80dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="40dp"
         app:layout_constraintStart_toEndOf="@id/session_item_text_session_id"
