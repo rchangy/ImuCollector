@@ -1,62 +1,33 @@
 package com.example.imucollector.ui.dashboard;
 
-import android.app.Activity;
 import android.content.DialogInterface;
-import android.content.Intent;
 
-import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.databinding.DataBindingUtil;
 
-import android.media.tv.TvInputService;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.provider.DocumentsContract;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.TableLayout;
-import android.widget.TableRow;
-import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
-import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 
 import androidx.lifecycle.SavedStateViewModelFactory;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.imucollector.R;
-import com.example.imucollector.data.Session;
 import com.example.imucollector.databinding.FragmentDashboardBinding;
 import com.example.imucollector.ui.home.HomeViewModel;
-import com.opencsv.CSVWriter;
 
-import org.w3c.dom.Text;
-
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.DateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-/*
-整理、輸出資料的 fragment（沒改預設名字所以還是叫 dashboard），UI 設計在 res/layout/fragment_dashboard.xml
-從 room database 拿出 session data 並顯示在 UI
-把所有資料生成 csv (這部分還沒寫完) 然後存在手機的 shared memory
-然後可以把指定資料刪掉
- */
 public class DashboardFragment extends Fragment {
     private static final String LOG_TAG = "DashboardFragment";
 
@@ -72,8 +43,6 @@ public class DashboardFragment extends Fragment {
     // export file
     private Button buttonExport;
     private ActivityResultLauncher<Uri> resultLauncher;
-
-
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,

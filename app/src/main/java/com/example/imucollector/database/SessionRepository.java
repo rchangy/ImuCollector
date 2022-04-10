@@ -29,13 +29,12 @@ public class SessionRepository {
         return INSTANCE;
     }
 
-    public SessionDao getSessionDao(){ return sessionDao; }
     public LiveData<List<Session>> getAllSessions(){
         return allSessions;
     }
 
     public void onActivityDestroyed(){
-//        SessionDatabase.pool.shutdown();
+        SessionDatabase.pool.shutdown();
     }
 
     public void deleteAllData(){

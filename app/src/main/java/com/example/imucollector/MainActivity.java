@@ -23,10 +23,6 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.example.imucollector.databinding.ActivityMainBinding;
 
-/*
-主畫面，UI 設計在 res/layout/activity_main.xml，預設包含一個 fragment container 和下面的 appbar(用來切換 fragment container 的內容)
- */
-
 public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = "MainActivity";
     private ActivityMainBinding binding;

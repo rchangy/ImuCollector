@@ -4,8 +4,6 @@ import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 
-import com.example.imucollector.database.SessionDao;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +15,6 @@ public class SensorCollectorManager {
 
     private int currentRecordId;
     private int currentSessionId;
-    private int currentFreq;
     private int sampleRateUs;
 
     public SensorCollectorManager(Context context){
@@ -35,7 +32,6 @@ public class SensorCollectorManager {
     public void startNewSession(int currentRecordId, int currentSessionId, int currentFreq){
         this.currentRecordId = currentRecordId;
         this.currentSessionId = currentSessionId;
-        this.currentFreq = currentFreq;
         sampleRateUs = 1000000 / currentFreq;
         registerAllSensors();
     }

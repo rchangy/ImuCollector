@@ -9,11 +9,7 @@ import android.app.Application;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
-import android.os.Environment;
 import android.os.ParcelFileDescriptor;
-import android.provider.DocumentsContract;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -27,28 +23,12 @@ import com.example.imucollector.data.GyroSensorData;
 import com.example.imucollector.data.Session;
 import com.example.imucollector.database.SessionDatabase;
 import com.example.imucollector.database.SessionRepository;
-import com.opencsv.CSVWriter;
 
-
-import org.apache.commons.lang3.mutable.Mutable;
-
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
-/*
-存所有 UI 相關資料的地方（因為 view model 存活時間會比 activity 長、也不會因為手機轉方向就重生一個）
-因為使用 data binding 所以 xml 檔案可以直接拿到這裡的資料（不用透過 activity 或 fragment 去設定）， data binding 的資料必須為 livedata
-兩個 fragment 會共用這個 view model
- */
 public class HomeViewModel extends AndroidViewModel{
     private static final String LOG_TAG = "HomeViewModel";
     private static final int MAX_SESSION = 1000;
@@ -56,6 +36,12 @@ public class HomeViewModel extends AndroidViewModel{
     private SharedPreferences sharedPref;
     private SharedPreferences.Editor editor;
     private SavedStateHandle savedStateHandle;
+
+    private final String PREFERENCE_FILE_KEY_FREQ = "currentFreq";
+    private final String PREFERENCE_FILE_KEY_SESSION_ID = "currentSessionId";
+    private final String PREFERENCE_FILE_KEY_RECORD_ID = "currentRecordId";
+    private final String PREFERENCE_FILE_KEY_TIMESTAMP = "sessionStartTimestamp";
+    private final String PREFERENCE_FILE_KEY_IS_COLLECTING = "isCollecting";
 
     public MutableLiveData<Integer> currentFreq;
     public MutableLiveData<Integer> currentSessionId;
@@ -67,13 +53,6 @@ public class HomeViewModel extends AndroidViewModel{
     // timer ui
     public MutableLiveData<String> timerText = new MutableLiveData<>("00 : 00 : 000");
     private long sessionStartTimestamp;
-
-    // saved state
-    private final String PREFERENCE_FILE_KEY_FREQ = "currentFreq";
-    private final String PREFERENCE_FILE_KEY_SESSION_ID = "currentSessionId";
-    private final String PREFERENCE_FILE_KEY_RECORD_ID = "currentRecordId";
-    private final String PREFERENCE_FILE_KEY_TIMESTAMP = "sessionStartTimestamp";
-    private final String PREFERENCE_FILE_KEY_IS_COLLECTING = "isCollecting";
 
     private List<Long> selectedSession = new ArrayList<>();
 

@@ -16,13 +16,6 @@ import com.example.imucollector.data.Session;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/*
-room database
-目前有三個 table，存 session 和兩種 session data
-session table 是為了快速檢查目前有幾筆資料
-session data table 就是存收集到的資料，不同 record id 和 session id 都會放在一起（暫時沒有想到更好的存法）
-sensor data 存的時候會存 record id, session id, timestamp，取資料的時候可以用 timestamp sort
- */
 @Database(entities = {Session.class, AccSensorData.class, GyroSensorData.class}, version = 2)
 public abstract class SessionDatabase extends RoomDatabase {
     private static final String DB_NAME = "sessionDatabase.db";

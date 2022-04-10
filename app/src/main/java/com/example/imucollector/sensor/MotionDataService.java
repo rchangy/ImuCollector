@@ -23,7 +23,6 @@ import com.example.imucollector.MainActivity;
 import com.example.imucollector.R;
 import com.example.imucollector.data.Session;
 import com.example.imucollector.database.SessionRepository;
-import com.example.imucollector.database.SessionDatabase;
 
 import com.example.imucollector.ui.home.HomeFragment;
 
@@ -32,21 +31,15 @@ public class MotionDataService extends Service {
     private static final String LOG_TAG = "MotionDataService";
     private static boolean isRunning;
 
-    // wakelock
     private PowerManager.WakeLock wakeLock;
 
-    // data collecting
-    private Session currentSession;
     private SensorCollectorManager scm;
 
-    // data
+    // session
     private int currentFreq;
     private int currentSessionId;
     private int currentRecordId;
     private long sessionStartTimestamp;
-
-    // database controller
-    SessionRepository sessionRepository;
 
     // broadcast receiver
     BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -78,7 +71,6 @@ public class MotionDataService extends Service {
     public void onCreate() {
         super.onCreate();
         scm = new SensorCollectorManager(getApplicationContext());
-        sessionRepository = SessionRepository.getInstance();
         registerReceiver(receiver, new IntentFilter(HomeFragment.BROADCAST_INTENT_ACTION));
 
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);

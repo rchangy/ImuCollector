@@ -4,8 +4,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 
-import com.example.imucollector.database.SessionDao;
-
 public abstract class SensorCollector implements SensorEventListener {
     protected int recordId;
     protected int sessionId;

@@ -3,9 +3,7 @@ package com.example.imucollector.database;
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
-import androidx.room.Index;
 import androidx.room.Insert;
-import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
 import com.example.imucollector.data.AccSensorData;
@@ -14,10 +12,6 @@ import com.example.imucollector.data.Session;
 
 import java.util.List;
 
-/*
-其他 class 用 Dao 來跟 database 溝通
-可以自行增加 method，@Query 括號內是 SQL 語法
- */
 
 @Dao
 public interface SessionDao {

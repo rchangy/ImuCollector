@@ -14,10 +14,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.imucollector.R;
 import com.example.imucollector.data.Session;
-import com.example.imucollector.database.SessionRepository;
 
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.List;
 
 public class SessionListAdapter extends ListAdapter<Session, SessionViewHolder> {

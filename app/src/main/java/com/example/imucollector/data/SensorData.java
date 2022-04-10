@@ -3,7 +3,6 @@ package com.example.imucollector.data;
 import androidx.room.ColumnInfo;
 import androidx.room.PrimaryKey;
 
-import java.util.Date;
 
 public abstract class SensorData {
     @PrimaryKey
