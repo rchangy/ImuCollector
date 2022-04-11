@@ -6,4 +6,4 @@ Android app that records imu data(accelerometer and gyroscope) for a specific pe
 ## Features
 - Records accelerometer and gyroscope data
 - Adjustable record id for different activities
-- Exports data to .csv file ([demo file](demo/imu_1649657542256.csv))
+- Exports data to .csv file ([demo file](demo/imu_1649659841310.csv))
