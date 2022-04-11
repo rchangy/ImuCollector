@@ -33,7 +33,7 @@ public class SessionRepository {
         return allSessions;
     }
 
-    public void onActivityDestroyed(){
+    public void shutDownDatabaseThreadPool(){
         SessionDatabase.pool.shutdown();
     }
 

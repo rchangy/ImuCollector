@@ -45,23 +45,35 @@ public class MotionDataService extends Service {
     BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(!intent.getAction().equals(HomeFragment.BROADCAST_INTENT_ACTION)) return;
-            String action = intent.getStringExtra(HomeFragment.INTENT_EXTRA_KEY_ACTION);
-            Log.d(LOG_TAG, "receive intent: " + action);
-            if(action.equals(HomeFragment.INTENT_EXTRA_ACTION_START)){
-                currentRecordId = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_RECORD_ID, -1);
-                currentSessionId = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_SESSION_ID, -1);
-                currentFreq = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_FREQ, -1);
-                sessionStartTimestamp = intent.getLongExtra(HomeFragment.INTENT_EXTRA_KEY_TIMESTAMP, -1);
-                if(currentRecordId != -1 && currentSessionId != -1 && currentFreq != -1 && sessionStartTimestamp != -1){
-                    wakeLock.acquire();
-                    scm.startNewSession(currentRecordId, currentSessionId, currentFreq);
-                    writeSessionToDB();
+            if(intent.getAction().equals(HomeFragment.BROADCAST_INTENT_ACTION)) {
+                String action = intent.getStringExtra(HomeFragment.INTENT_EXTRA_KEY_ACTION);
+                Log.d(LOG_TAG, "receive intent: " + action);
+                if(action.equals(HomeFragment.INTENT_EXTRA_ACTION_START)){
+                    currentRecordId = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_RECORD_ID, -1);
+                    currentSessionId = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_SESSION_ID, -1);
+                    currentFreq = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_FREQ, -1);
+                    sessionStartTimestamp = intent.getLongExtra(HomeFragment.INTENT_EXTRA_KEY_TIMESTAMP, -1);
+                    if(currentRecordId != -1 && currentSessionId != -1 && currentFreq != -1 && sessionStartTimestamp != -1){
+                        wakeLock.acquire();
+                        startForeground();
+                        scm.startNewSession(currentRecordId, currentSessionId, currentFreq);
+                        writeSessionToDB();
+                    }
+                }
+                else if(action.equals(HomeFragment.INTENT_EXTRA_ACTION_STOP)){
+                    wakeLock.release();
+                    stopForeground(true);
+                    scm.endSession();
                 }
             }
-            else if(action.equals(HomeFragment.INTENT_EXTRA_ACTION_STOP)){
-                wakeLock.release();
-                scm.endSession();
+            else if(intent.getAction().equals(MainActivity.BROADCAST_INTENT_ACTION)){
+                isRunning = false;
+                if(wakeLock.isHeld()){
+                    wakeLock.release();
+                    scm.endSession();
+                }
+                SessionRepository.getInstance().shutDownDatabaseThreadPool();
+                stopSelf();
             }
         }
     };
@@ -71,7 +83,10 @@ public class MotionDataService extends Service {
     public void onCreate() {
         super.onCreate();
         scm = new SensorCollectorManager(getApplicationContext());
-        registerReceiver(receiver, new IntentFilter(HomeFragment.BROADCAST_INTENT_ACTION));
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(HomeFragment.BROADCAST_INTENT_ACTION);
+        intentFilter.addAction(MainActivity.BROADCAST_INTENT_ACTION);
+        registerReceiver(receiver, intentFilter);
 
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "imucollector::WakelockTag");
@@ -93,11 +108,12 @@ public class MotionDataService extends Service {
 
     @Override
     public void onDestroy() {
-        unregisterReceiver(receiver);
         Log.d(LOG_TAG, "service stopped, unregister listener");
         isRunning = false;
+        unregisterReceiver(receiver);
         if(wakeLock.isHeld()){
             wakeLock.release();
+            scm.endSession();
         }
         super.onDestroy();
     }
@@ -116,23 +132,22 @@ public class MotionDataService extends Service {
 
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent =
-                PendingIntent.getActivity(this, 0, notificationIntent, 0);
+                PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
 
         Notification notification = builder.setContentTitle("Imu Data Collecting")
-                .setContentText(":))")
                 .setSmallIcon(R.drawable.ic_notifications_black_24dp)
                 .setContentIntent(pendingIntent)
-                .setTicker("Start collecting imu data :)))))))")
+                .setTicker("Imu data collecting")
                 .build();
-
+        Log.d(LOG_TAG, "start foreground");
         startForeground(1, notification);
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private String createNotificationChannel(String channelId, String channelName){
-        NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_NONE);
+        NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
         channel.setLightColor(Color.BLUE);
-        channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         NotificationManager service = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         service.createNotificationChannel(channel);
         return channelId;

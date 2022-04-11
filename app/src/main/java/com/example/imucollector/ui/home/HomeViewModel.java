@@ -97,6 +97,7 @@ public class HomeViewModel extends AndroidViewModel{
         editor.putInt(PREFERENCE_FILE_KEY_RECORD_ID, currentRecordId.getValue());
         editor.putInt(PREFERENCE_FILE_KEY_FREQ, currentFreq.getValue());
         editor.putLong(PREFERENCE_FILE_KEY_TIMESTAMP, sessionStartTimestamp);
+        editor.putBoolean(PREFERENCE_FILE_KEY_IS_COLLECTING, isCollecting.getValue());
         editor.apply();
     }
 

@@ -25,6 +25,9 @@ import com.example.imucollector.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = "MainActivity";
+
+    public static final String BROADCAST_INTENT_ACTION = "DestroyActivity";
+
     private ActivityMainBinding binding;
     private HomeViewModel homeViewModel;
 
@@ -48,19 +51,11 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(binding.navView, navController);
 
         homeViewModel = new ViewModelProvider((ViewModelStoreOwner) this, new SavedStateViewModelFactory(getApplication(), this)).get(HomeViewModel.class);
-        startService(new Intent(this, MotionDataService.class));
+        if(!MotionDataService.isServiceRunning()) startService(new Intent(this, MotionDataService.class));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1000);
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if(!MotionDataService.isServiceRunning()){
-            startService(new Intent(this, MotionDataService.class));
         }
     }
 
@@ -75,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         Log.d(LOG_TAG, "on destroy");
         stopService(new Intent(this, MotionDataService.class));
-        SessionRepository.getInstance().onActivityDestroyed();
+        sendBroadcast(new Intent(BROADCAST_INTENT_ACTION));
         super.onDestroy();
     }
 }

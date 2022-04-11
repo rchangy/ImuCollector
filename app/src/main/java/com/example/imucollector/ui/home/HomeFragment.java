@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.NumberPicker;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,6 +22,7 @@ import androidx.lifecycle.ViewModelStoreOwner;
 import com.example.imucollector.R;
 import com.example.imucollector.data.Session;
 import com.example.imucollector.databinding.FragmentHomeBinding;
+import com.example.imucollector.sensor.MotionDataService;
 import com.google.android.material.slider.Slider;
 
 import java.util.ArrayList;
@@ -73,8 +75,6 @@ public class HomeFragment extends Fragment {
     private Timer timer = new Timer();
 
     private Button buttonTimer;
-    private Intent intent;
-
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -143,15 +143,26 @@ public class HomeFragment extends Fragment {
     public void onResume() {
         super.onResume();
         Log.d(LOG_TAG, "fragment resume");
-        if(homeViewModel.isCollecting.getValue()){
-            timer = new Timer();
-            timer.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    String text = homeViewModel.getTimeText();
-                    getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
-                }
-            }, 0, 10);
+        if(!MotionDataService.isServiceRunning()){
+            Log.d(LOG_TAG, "restart service");
+            getActivity().startService(new Intent(requireActivity(), MotionDataService.class));
+            if(homeViewModel.isCollecting.getValue()){
+                Toast.makeText(requireActivity(), "Service has been killed", Toast.LENGTH_LONG).show();
+                homeViewModel.startStopTimer();
+            }
+        }
+        else{
+            if(homeViewModel.isCollecting.getValue()){
+                Log.d(LOG_TAG, "restart timer");
+                timer = new Timer();
+                timer.scheduleAtFixedRate(new TimerTask() {
+                    @Override
+                    public void run() {
+                        String text = homeViewModel.getTimeText();
+                        getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
+                    }
+                }, 0, 10);
+            }
         }
     }
 
