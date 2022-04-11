@@ -1,8 +1,7 @@
 # IMU Collector
 Android app that records imu data(accelerometer and gyroscope) for a specific period of time.
 
-![screenshot home](demo/ScreenshotHome.png)
-![screenshot data](demo/ScreenshotData.png)
+![screenshot home](demo/ScreenshotHome.png) ![screenshot data](demo/ScreenshotData.png)
 
 ## Features
 - Records accelerometer and gyroscope data
