@@ -45,6 +45,9 @@ public class SessionRepository {
         });
     }
 
+    public Session[] getAllSessionsInBackground(){
+        return sessionDao.getAllSessionsArray();
+    }
     public Session[] getSelectedSessionsInBackground(Long[] timestamps){
         Session[] sessions = sessionDao.getSelectedSessions(timestamps);
         return sessions;

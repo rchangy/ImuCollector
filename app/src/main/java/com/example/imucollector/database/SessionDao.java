@@ -29,6 +29,9 @@ public interface SessionDao {
     @Query("SELECT * FROM session WHERE timestamp IN (:timestamps)")
     public Session[] getSelectedSessions(Long... timestamps);
 
+    @Query("SElECT * FROM session ORDER BY timestamp")
+    public Session[] getAllSessionsArray();
+
     @Query("DELETE FROM session")
     public void deleteAllSessions();
 

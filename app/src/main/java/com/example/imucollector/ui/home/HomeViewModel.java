@@ -8,26 +8,18 @@ import androidx.lifecycle.MutableLiveData;
 import android.app.Application;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.ParcelFileDescriptor;
 import android.util.Log;
-import android.widget.Toast;
-
-import androidx.documentfile.provider.DocumentFile;
 
 import androidx.lifecycle.SavedStateHandle;
 import androidx.preference.PreferenceManager;
 
-import com.example.imucollector.data.AccSensorData;
-import com.example.imucollector.data.GyroSensorData;
 import com.example.imucollector.data.Session;
 import com.example.imucollector.database.SessionDatabase;
 import com.example.imucollector.database.SessionRepository;
+import com.example.imucollector.export.CsvExporter;
 
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringJoiner;
 
 public class HomeViewModel extends AndroidViewModel{
     private static final String LOG_TAG = "HomeViewModel";
@@ -54,6 +46,7 @@ public class HomeViewModel extends AndroidViewModel{
     public MutableLiveData<String> timerText = new MutableLiveData<>("00 : 00 : 000");
     private long sessionStartTimestamp;
 
+    private CsvExporter csvExporter = new CsvExporter();
     private List<Long> selectedSession = new ArrayList<>();
 
     public HomeViewModel(Application application, SavedStateHandle savedStateHandle) {
@@ -149,7 +142,6 @@ public class HomeViewModel extends AndroidViewModel{
 
     public List<Long> getSelectedSession() { return selectedSession; }
 
-
     public void startStopTimer(){
         if(isCollecting.getValue()){
             // stop timer
@@ -180,7 +172,8 @@ public class HomeViewModel extends AndroidViewModel{
             Log.d(LOG_TAG, "export failed: null result uri");
             return;
         }
-        new ExportFileTask().execute(uri);
+        List<Long> copy = new ArrayList<>(selectedSession);
+        csvExporter.export(getApplication(), copy, uri);
     }
 
     public String getTimeText(){
@@ -193,100 +186,4 @@ public class HomeViewModel extends AndroidViewModel{
     }
 
     private String formatTime(int ms, int seconds, int minutes) { return String.format("%02d",minutes) + " : " + String.format("%02d",seconds) + " : " + String.format("%03d",ms); }
-
-
-    private class ExportFileTask extends AsyncTask<Uri, Void, Integer>{
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            Toast.makeText(getApplication(), "Start exporting", Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        protected Integer doInBackground(Uri... resultUri) {
-            Uri dirUri = resultUri[0];
-            DocumentFile imuCollectorDocumentFile = DocumentFile.fromTreeUri(getApplication(), dirUri);
-            Log.d(LOG_TAG, imuCollectorDocumentFile.getUri().getPath());
-            String currentTime = String.valueOf(System.currentTimeMillis());
-            String exportFilename = "imu_" + currentTime;
-            String[] header = {"Record Id", "Session Id", "Acc Timestamp", "AccX", "AccY", "AccZ", "Gyro Timestamp", "GyroX", "GyroY", "GyroZ"};
-            String[] emptyEntry = {"", "", "", ""};
-            Integer sessionNum = null;
-            try{
-                Session[] sessions;
-                if(selectedSession.isEmpty()){
-                    sessions = getAllSessions().getValue().toArray(new Session[0]);
-                }
-                else{
-                    sessions = SessionRepository.getInstance().getSelectedSessionsInBackground(selectedSession.toArray(new Long[0]));
-                }
-                sessionNum = sessions.length;
-                DocumentFile exportDocumentFile = imuCollectorDocumentFile.createFile("text/csv", exportFilename);
-                Uri exportUri = exportDocumentFile.getUri();
-                ParcelFileDescriptor pdf = getApplication().getContentResolver().openFileDescriptor(exportUri, "w");
-                FileOutputStream fileOutputStream = new FileOutputStream(pdf.getFileDescriptor());
-                fileOutputStream.write(stringJoiner(header).getBytes());
-                for(Session session : sessions){
-                    String recordIdStr = String.valueOf(session.recordId);
-                    String sessionIdStr = String.valueOf(session.sessionId);
-                    AccSensorData[] accData = SessionRepository.getInstance().getSessionAccDataInBackground(session);
-                    GyroSensorData[] gyroData = SessionRepository.getInstance().getSessionGyroDataInBackground(session);
-                    int dataCount = Math.max(accData.length, gyroData.length);
-                    Log.d(LOG_TAG, "record " + recordIdStr + " session " + sessionIdStr +  " data count = " + accData.length + " " +  gyroData.length);
-                    for(int i = 0; i < dataCount; i++){
-                        String[] data = new String[10];
-                        data[0] = recordIdStr;
-                        data[1] = sessionIdStr;
-                        String[] accFormatData;
-                        String[] gyroFormatData;
-                        if(i < accData.length){
-                            accFormatData = accData[i].formatData();
-                        }
-                        else accFormatData = emptyEntry;
-
-                        if(i < gyroData.length){
-                            gyroFormatData = gyroData[i].formatData();
-                        }
-                        else gyroFormatData = emptyEntry;
-
-                        System.arraycopy(accFormatData, 0, data, 2, 4);
-                        System.arraycopy(gyroFormatData, 0, data, 6, 4);
-                        fileOutputStream.write(stringJoiner(data).getBytes());
-                    }
-                }
-                fileOutputStream.close();
-                pdf.close();
-            }
-            catch (Exception e){
-                e.printStackTrace();
-                return -1;
-            }
-            if(sessionNum != null){
-                return sessionNum;
-            }
-            else
-                return -1;
-        }
-        @Override
-        protected void onPostExecute(Integer integer) {
-            super.onPostExecute(integer);
-            if(integer == -1){
-                Toast.makeText(getApplication(), "Export failed ;(", Toast.LENGTH_LONG).show();
-                Log.d(LOG_TAG, "Export failed");
-            }
-            else{
-                Toast.makeText(getApplication(), "Export succeeded :)", Toast.LENGTH_LONG).show();
-                Log.d(LOG_TAG, "Export succeeded, " + integer + " sessions exported");
-            }
-        }
-
-        public String stringJoiner(String[] arr) {
-            StringJoiner joiner = new StringJoiner(",", "", "\n");
-            for (String el : arr) {
-                joiner.add(el);
-            }
-            return joiner.toString();
-        }
-    }
 }
