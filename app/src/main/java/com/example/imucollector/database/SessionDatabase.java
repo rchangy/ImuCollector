@@ -9,6 +9,9 @@ import androidx.room.RoomDatabase;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
+import com.example.imucollector.dao.AccSensorDataDao;
+import com.example.imucollector.dao.GyroSensorDataDao;
+import com.example.imucollector.dao.SessionDao;
 import com.example.imucollector.data.AccSensorData;
 import com.example.imucollector.data.GyroSensorData;
 import com.example.imucollector.data.Session;
@@ -38,7 +41,8 @@ public abstract class SessionDatabase extends RoomDatabase {
     }
 
     public abstract SessionDao sessionDao();
-
+    public abstract AccSensorDataDao accSensorDataDao();
+    public abstract GyroSensorDataDao gyroSensorDataDao();
 
     // migration
     static final Migration MIGRATION_1_2 = new Migration(1, 2) {

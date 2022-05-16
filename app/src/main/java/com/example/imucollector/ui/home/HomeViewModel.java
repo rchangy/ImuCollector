@@ -6,7 +6,6 @@ import androidx.lifecycle.MutableLiveData;
 
 
 import android.app.Application;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Log;
@@ -18,7 +17,6 @@ import com.example.imucollector.data.Session;
 import com.example.imucollector.database.SessionDatabase;
 import com.example.imucollector.database.SessionRepository;
 import com.example.imucollector.export.CsvExporter;
-import com.example.imucollector.sensor.MotionDataService;
 
 import java.util.ArrayList;
 import java.util.List;

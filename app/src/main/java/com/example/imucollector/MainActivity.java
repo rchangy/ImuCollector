@@ -9,8 +9,7 @@ import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.imucollector.database.SessionRepository;
-import com.example.imucollector.sensor.MotionDataService;
+import com.example.imucollector.service.MotionDataService;
 import com.example.imucollector.ui.home.HomeViewModel;
 
 import androidx.lifecycle.SavedStateViewModelFactory;

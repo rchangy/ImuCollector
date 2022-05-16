@@ -2,6 +2,9 @@ package com.example.imucollector.database;
 
 import androidx.lifecycle.LiveData;
 
+import com.example.imucollector.dao.AccSensorDataDao;
+import com.example.imucollector.dao.GyroSensorDataDao;
+import com.example.imucollector.dao.SessionDao;
 import com.example.imucollector.data.AccSensorData;
 import com.example.imucollector.data.GyroSensorData;
 import com.example.imucollector.data.Session;
@@ -13,12 +16,16 @@ public class SessionRepository {
     private static SessionRepository INSTANCE = null;
 
     private SessionDao sessionDao;
+    private AccSensorDataDao accSensorDataDao;
+    private GyroSensorDataDao gyroSensorDataDao;
     private LiveData<List<Session>> allSessions;
 
     private SessionRepository(){ }
 
     public void init(SessionDatabase db) {
         sessionDao = db.sessionDao();
+        accSensorDataDao = db.accSensorDataDao();
+        gyroSensorDataDao = db.gyroSensorDataDao();
         allSessions = sessionDao.getAllSessions();
     }
 
@@ -40,8 +47,8 @@ public class SessionRepository {
     public void deleteAllData(){
         SessionDatabase.pool.execute(()->{
             sessionDao.deleteAllSessions();
-            sessionDao.deleteAllAccSensorData();
-            sessionDao.deleteAllGyroSensorData();
+            accSensorDataDao.deleteAllAccSensorData();
+            gyroSensorDataDao.deleteAllGyroSensorData();
         });
     }
 
@@ -64,19 +71,19 @@ public class SessionRepository {
 
     private void deleteSessionInBackground(Session session){
         sessionDao.deleteSessions(session);
-        sessionDao.deleteAccSensorDataBySession(session.recordId, session.sessionId);
-        sessionDao.deleteGyroSensorDataBySession(session.recordId, session.sessionId);
+        accSensorDataDao.deleteAccSensorDataBySession(session.recordId, session.sessionId);
+        gyroSensorDataDao.deleteGyroSensorDataBySession(session.recordId, session.sessionId);
     }
 
     public void insertAccData(AccSensorData[] data){
         SessionDatabase.pool.execute(() ->{
-            sessionDao.insertAccSensorData(data);
+            accSensorDataDao.insertAccSensorData(data);
         });
     }
 
     public void insertGyroData(GyroSensorData[] data){
         SessionDatabase.pool.execute(() ->{
-            sessionDao.insertGyroSensorData(data);
+            gyroSensorDataDao.insertGyroSensorData(data);
         });
     }
 
@@ -87,14 +94,14 @@ public class SessionRepository {
     }
 
     public AccSensorData[] getSessionAccDataInBackground(Session session){
-        return sessionDao.getAccSensorDataBySession(session.recordId, session.sessionId);
+        return accSensorDataDao.getAccSensorDataBySession(session.recordId, session.sessionId);
     }
 
     public AccSensorData[] getAllAccDataInBackground(){
-        return sessionDao.getAllAccSensorData();
+        return accSensorDataDao.getAllAccSensorData();
     }
 
     public GyroSensorData[] getSessionGyroDataInBackground(Session session){
-        return sessionDao.getGyroSensorDataBySession(session.recordId, session.sessionId);
+        return gyroSensorDataDao.getGyroSensorDataBySession(session.recordId, session.sessionId);
     }
 }

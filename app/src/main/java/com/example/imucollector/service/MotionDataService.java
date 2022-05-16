@@ -1,4 +1,4 @@
-package com.example.imucollector.sensor;
+package com.example.imucollector.service;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -24,6 +24,7 @@ import com.example.imucollector.R;
 import com.example.imucollector.data.Session;
 import com.example.imucollector.database.SessionRepository;
 
+import com.example.imucollector.sensor.SensorCollectorManager;
 import com.example.imucollector.ui.home.HomeFragment;
 
 public class MotionDataService extends Service {

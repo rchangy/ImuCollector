@@ -20,13 +20,10 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStoreOwner;
 
 import com.example.imucollector.R;
-import com.example.imucollector.data.Session;
 import com.example.imucollector.databinding.FragmentHomeBinding;
-import com.example.imucollector.sensor.MotionDataService;
+import com.example.imucollector.service.MotionDataService;
 import com.google.android.material.slider.Slider;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
