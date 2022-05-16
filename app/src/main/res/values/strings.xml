@@ -4,4 +4,7 @@
     <string name="title_dashboard">Data</string>
     <string name="title_notifications">Notifications</string>
     <string name="title">IMU Collector</string>
+    <string name="record_id">Record ID</string>
+    <string name="session_id">Session ID</string>
+    <string name="sample_rate">Sample Rate</string>
 </resources>

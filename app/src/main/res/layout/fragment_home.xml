@@ -33,7 +33,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:orientation="vertical"
-            app:layout_constraintGuide_percent="0.1" />
+            app:layout_constraintGuide_percent="0.35" />
 
         <TextView
             android:id="@+id/text_home"
@@ -71,10 +71,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:lineSpacingExtra="10sp"
-            app:layout_constraintStart_toStartOf="@id/guideline_ver2"
+            app:layout_constraintEnd_toStartOf="@id/guideline_ver2"
             app:layout_constraintTop_toBottomOf="@id/guideline_hor2"
-            android:textSize="25sp"
-            android:text="record id:"
+            android:textSize="22sp"
+            android:text="@string/record_id"
             />
 
         <NumberPicker
@@ -84,7 +84,7 @@
             android:layout_marginTop="-15dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.503"
-            app:layout_constraintStart_toEndOf="@id/guideline_ver"
+            app:layout_constraintStart_toEndOf="@id/guideline_ver2"
             app:layout_constraintTop_toBottomOf="@+id/guideline_hor2" />
 
         <androidx.constraintlayout.widget.Guideline
@@ -98,10 +98,10 @@
             android:id="@+id/text_session_id"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintStart_toStartOf="@id/guideline_ver2"
+            app:layout_constraintEnd_toStartOf="@id/guideline_ver2"
             app:layout_constraintTop_toBottomOf="@id/guideline_hor3"
-            android:textSize="25sp"
-            android:text="session id:"
+            android:textSize="22sp"
+            android:text="@string/session_id"
 
             />
 
@@ -110,9 +110,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@{String.valueOf(homeViewModel.currentSessionId)}"
-            android:textSize="25sp"
+            android:textSize="22sp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/guideline_ver"
+            app:layout_constraintStart_toEndOf="@id/guideline_ver2"
             app:layout_constraintTop_toTopOf="@id/text_session_id" />
 
         <androidx.constraintlayout.widget.Guideline
@@ -126,19 +126,21 @@
             android:id="@+id/text_freq"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintStart_toStartOf="@id/guideline_ver2"
+            app:layout_constraintEnd_toStartOf="@id/guideline_ver2"
             app:layout_constraintTop_toBottomOf="@id/guideline_hor4"
-            android:textSize="25sp"
-            android:text="freq:"
+            android:textSize="22sp"
+            android:text="@string/sample_rate"
             />
 
         <com.google.android.material.slider.Slider
             android:id="@+id/slider_freq"
             android:layout_width="250dp"
             android:layout_height="wrap_content"
-            app:layout_constraintStart_toEndOf="@id/text_freq"
+            app:layout_constraintStart_toEndOf="@id/guideline_ver"
+            android:layout_marginLeft="-40dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/text_freq"
+            android:layout_marginTop="-7dp"
             android:valueFrom="1"
             android:valueTo="200"
             android:value="60"
@@ -152,8 +154,8 @@
             app:layout_constraintStart_toStartOf="@id/slider_freq"
             app:layout_constraintEnd_toEndOf="@id/slider_freq"
             app:layout_constraintTop_toBottomOf="@id/slider_freq"
-            android:textSize="25sp"
-            android:text="@{String.valueOf(homeViewModel.currentFreq)}"
+            android:textSize="18sp"
+            android:text="@{String.valueOf(homeViewModel.currentFreq)+`Hz`}"
             />
 
         <androidx.constraintlayout.widget.Guideline

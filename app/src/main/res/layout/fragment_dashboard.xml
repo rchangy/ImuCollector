@@ -34,14 +34,14 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:orientation="horizontal"
-            app:layout_constraintGuide_percent="0.25" />
+            app:layout_constraintGuide_percent="0.3" />
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_hor2"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:orientation="horizontal"
-            app:layout_constraintGuide_percent="0.2" />
+            app:layout_constraintGuide_percent="0.25" />
 
         <Button
             android:id="@+id/button_delete"
@@ -81,7 +81,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintStart_toEndOf="@id/checkbox_all"
             app:layout_constraintBottom_toTopOf="@id/guideline_hor"
-            android:text="Record Id"
+            android:text="@string/record_id"
             android:textSize="15sp"
             android:layout_marginLeft="15dp"
             android:layout_marginBottom="15dp"
@@ -92,7 +92,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintStart_toEndOf="@id/text_header_record_id"
             app:layout_constraintBottom_toTopOf="@id/guideline_hor"
-            android:text="Session Id"
+            android:text="@string/session_id"
             android:textSize="15sp"
             android:layout_marginBottom="15dp"
             />
