@@ -35,15 +35,6 @@ public class HomeFragment extends Fragment {
 
     private static final String LOG_TAG = "HomeFragment";
 
-//    public static final String BROADCAST_INTENT_ACTION = "StartStopSession";
-//    public static final String INTENT_EXTRA_KEY_ACTION = "Action";
-//    public static final String INTENT_EXTRA_ACTION_START = "Start";
-//    public static final String INTENT_EXTRA_ACTION_STOP = "Stop";
-//    public static final String INTENT_EXTRA_KEY_SESSION_ID = "SessionId";
-//    public static final String INTENT_EXTRA_KEY_RECORD_ID = "RecordId";
-//    public static final String INTENT_EXTRA_KEY_FREQ = "Freq";
-//    public static final String INTENT_EXTRA_KEY_TIMESTAMP = "Timestamp";
-
     private HomeViewModel homeViewModel;
     private FragmentHomeBinding binding;
     private Slider sliderFreq;
@@ -121,14 +112,6 @@ public class HomeFragment extends Fragment {
 
             homeViewModel.startStopTimer();
             Log.d(LOG_TAG, "start timer");
-//            Intent intent = new Intent(getActivity(), MotionDataService.class);
-//            intent.putExtra(INTENT_EXTRA_KEY_ACTION, INTENT_EXTRA_ACTION_START);
-//            intent.putExtra(INTENT_EXTRA_KEY_RECORD_ID, homeViewModel.currentRecordId.getValue());
-//            intent.putExtra(INTENT_EXTRA_KEY_SESSION_ID, homeViewModel.currentSessionId.getValue());
-//            intent.putExtra(INTENT_EXTRA_KEY_FREQ, homeViewModel.currentFreq.getValue());
-//            intent.putExtra(INTENT_EXTRA_KEY_TIMESTAMP, homeViewModel.getSessionStartTimestamp());
-////            getContext().sendBroadcast(intent);
-//            getActivity().startService(intent);
             timer = new Timer();
             timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
@@ -164,36 +147,7 @@ public class HomeFragment extends Fragment {
                     getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
                 }
             }, 0, 10);
-//            if(MotionDataService.isServiceRunning()){
-//                // service survive
-//                Log.d(LOG_TAG, "restart timer");
-//                timer = new Timer();
-//                timer.scheduleAtFixedRate(new TimerTask() {
-//                    @Override
-//                    public void run() {
-//                        String text = homeViewModel.getTimeText();
-//                        getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
-//                    }
-//                }, 0, 10);
-//            }
-//            else{   // service killed
-//                Toast.makeText(getContext(), "Service has been killed", Toast.LENGTH_LONG).show();
-//                homeViewModel.startStopTimer();
-//            }
         }
-//        if(MotionDataService.isServiceRunning()){   // service survives
-//            if(homeViewModel.isCollecting.getValue()){
-//                Log.d(LOG_TAG, "restart timer");
-//                timer = new Timer();
-//                timer.scheduleAtFixedRate(new TimerTask() {
-//                    @Override
-//                    public void run() {
-//                        String text = homeViewModel.getTimeText();
-//                        getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
-//                    }
-//                }, 0, 10);
-//            }
-//        }
     }
 
     @Override

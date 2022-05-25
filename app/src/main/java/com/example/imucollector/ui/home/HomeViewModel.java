@@ -59,7 +59,6 @@ public class HomeViewModel extends AndroidViewModel{
     private Intent intentService;
     public static final String INTENT_EXTRA_KEY_ACTION = "Action";
     public static final String INTENT_EXTRA_ACTION_START = "Start";
-    public static final String INTENT_EXTRA_ACTION_STOP = "Stop";
     public static final String INTENT_EXTRA_KEY_SESSION_ID = "SessionId";
     public static final String INTENT_EXTRA_KEY_RECORD_ID = "RecordId";
     public static final String INTENT_EXTRA_KEY_FREQ = "Freq";
@@ -90,18 +89,6 @@ public class HomeViewModel extends AndroidViewModel{
         getApplication().registerReceiver(receiver, intentFilter);
     }
 
-//    public boolean restartService(){
-//        if(!MotionDataService.isServiceRunning()){
-//            Log.d(LOG_TAG, "restart service");
-//            getApplication().startService(new Intent(getApplication(), MotionDataService.class));
-//            if(isCollecting.getValue()){
-//                Toast.makeText(getApplication(), "Service has been killed", Toast.LENGTH_LONG).show();
-//                startStopTimer();
-//            }
-//            return true;
-//        }
-//        return false;
-//    }
     public void load(){
         int defaultFreq = 60;
         if(savedStateHandle.contains(PREFERENCE_FILE_KEY_FREQ)) currentFreq = savedStateHandle.getLiveData(PREFERENCE_FILE_KEY_FREQ);

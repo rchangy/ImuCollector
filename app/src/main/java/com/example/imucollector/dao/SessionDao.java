@@ -35,44 +35,4 @@ public interface SessionDao {
     @Query("DELETE FROM session")
     public void deleteAllSessions();
 
-//    // acc sensor data
-//    @Insert
-//    public void insertAccSensorData(AccSensorData... data);
-//
-//    @Delete
-//    public void deleteAccSensorData(AccSensorData... data);
-//
-//    @Query("SELECT * FROM `acc data` ORDER BY timestamp")
-//    public AccSensorData[] getAllAccSensorData();
-//
-//    @Query("SELECT * FROM `acc data` WHERE `record id` == :recordId AND `session id` == :sessionId")
-//    public AccSensorData[] getAccSensorDataBySession(int recordId, int sessionId);
-//
-//    @Query("DELETE FROM `acc data`")
-//    public void deleteAllAccSensorData();
-//
-//    @Query("DELETE FROM `acc data` WHERE `record id` == :recordId AND `session id` == :sessionId")
-//    public void deleteAccSensorDataBySession(int recordId, int sessionId);
-
-
-//    // gyro sensor data
-//    @Insert
-//    public void insertGyroSensorData(GyroSensorData... data);
-//
-//    @Delete
-//    public void deleteGyroSensorData(GyroSensorData... data);
-//
-//    @Query("SELECT * FROM `gyro data` ORDER BY timestamp")
-//    public GyroSensorData[] getAllGyroSensorData();
-//
-//    @Query("SELECT * FROM `gyro data` WHERE `record id` == :recordId AND `session id` == :sessionId")
-//    public GyroSensorData[] getGyroSensorDataBySession(int recordId, int sessionId);
-//
-//    @Query("DELETE FROM `gyro data`")
-//    public void deleteAllGyroSensorData();
-//
-//    @Query("DELETE FROM `gyro data` WHERE `record id` == :recordId AND `session id` == :sessionId")
-//    public void deleteGyroSensorDataBySession(int recordId, int sessionId);
-//
-
 }
