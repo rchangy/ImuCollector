@@ -10,7 +10,7 @@ import java.util.List;
 public class SensorCollectorManager {
     private final Context context;
     private SensorManager sensorManager;
-    private List<SensorCollector> sensorCollectors = new ArrayList<>();
+    private final List<SensorCollector> sensorCollectors = new ArrayList<>();
 
 
     private int currentRecordId;

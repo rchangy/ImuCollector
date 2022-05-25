@@ -6,9 +6,11 @@ import androidx.lifecycle.MutableLiveData;
 
 
 import android.app.Application;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.lifecycle.SavedStateHandle;
 import androidx.preference.PreferenceManager;
@@ -17,6 +19,7 @@ import com.example.imucollector.data.Session;
 import com.example.imucollector.database.SessionDatabase;
 import com.example.imucollector.database.SessionRepository;
 import com.example.imucollector.export.CsvExporter;
+import com.example.imucollector.service.MotionDataService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,10 +27,11 @@ import java.util.List;
 public class HomeViewModel extends AndroidViewModel{
     private static final String LOG_TAG = "HomeViewModel";
     private static final int MAX_SESSION = 1000;
+    public static final String BROADCAST_INTENT_ACTION = "ViewModelDestroyed";
 
-    private SharedPreferences sharedPref;
-    private SharedPreferences.Editor editor;
-    private SavedStateHandle savedStateHandle;
+    private final SharedPreferences sharedPref;
+    private final SharedPreferences.Editor editor;
+    private final SavedStateHandle savedStateHandle;
 
     private final String PREFERENCE_FILE_KEY_FREQ = "currentFreq";
     private final String PREFERENCE_FILE_KEY_SESSION_ID = "currentSessionId";
@@ -46,8 +50,8 @@ public class HomeViewModel extends AndroidViewModel{
     public MutableLiveData<String> timerText = new MutableLiveData<>("00 : 00 : 000");
     private long sessionStartTimestamp;
 
-    private CsvExporter csvExporter = new CsvExporter();
-    private List<Long> selectedSession = new ArrayList<>();
+    private final CsvExporter csvExporter = new CsvExporter();
+    private final List<Long> selectedSession = new ArrayList<>();
 
     public HomeViewModel(Application application, SavedStateHandle savedStateHandle) {
         super(application);
@@ -58,8 +62,20 @@ public class HomeViewModel extends AndroidViewModel{
         SessionRepository.getInstance().init(SessionDatabase.getInstance(getApplication()));
     }
 
+    public boolean restartService(){
+        if(!MotionDataService.isServiceRunning()){
+            Log.d(LOG_TAG, "restart service");
+            getApplication().startService(new Intent(getApplication(), MotionDataService.class));
+            if(isCollecting.getValue()){
+                Toast.makeText(getApplication(), "Service has been killed", Toast.LENGTH_LONG).show();
+                startStopTimer();
+            }
+            return true;
+        }
+        return false;
+    }
     public void load(){
-        Integer defaultFreq = 60;
+        int defaultFreq = 60;
         if(savedStateHandle.contains(PREFERENCE_FILE_KEY_FREQ)) currentFreq = savedStateHandle.getLiveData(PREFERENCE_FILE_KEY_FREQ);
         else {
             currentFreq = new MutableLiveData<>();
@@ -159,6 +175,8 @@ public class HomeViewModel extends AndroidViewModel{
 
     @Override
     protected void onCleared() {
+        getApplication().sendBroadcast(new Intent(BROADCAST_INTENT_ACTION));
+        setIsCollecting(false);
         super.onCleared();
     }
 

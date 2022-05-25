@@ -23,10 +23,9 @@ import java.util.concurrent.Executors;
 public abstract class SessionDatabase extends RoomDatabase {
     private static final String DB_NAME = "sessionDatabase.db";
     private static volatile SessionDatabase instance;
-    private static final int NUMBER_OF_THREADS = 1;
-    static final ExecutorService pool = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
 
     protected SessionDatabase() { };
+
     public static synchronized SessionDatabase getInstance(Context context){
         if(instance == null){
             instance = create(context);

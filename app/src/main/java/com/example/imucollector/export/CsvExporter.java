@@ -55,42 +55,38 @@ public class CsvExporter {
                 sessions = SessionRepository.getInstance().getSelectedSessionsInBackground(selectedSession.toArray(new Long[0]));
             }
             sessionNum = sessions.length;
-            try{
-                DocumentFile exportDocumentFile = imuCollectorDocumentFile.createFile("text/csv", exportFilename);
-                Uri exportUri = exportDocumentFile.getUri();
-                ParcelFileDescriptor pdf = app.getContentResolver().openFileDescriptor(exportUri, "w");
-                FileOutputStream fileOutputStream = new FileOutputStream(pdf.getFileDescriptor());
-                fileOutputStream.write(stringJoiner(header).getBytes());
-                for(Session session : sessions){
-                    String recordIdStr = String.valueOf(session.recordId);
-                    String sessionIdStr = String.valueOf(session.sessionId);
-                    AccSensorData[] accData = SessionRepository.getInstance().getSessionAccDataInBackground(session);
-                    GyroSensorData[] gyroData = SessionRepository.getInstance().getSessionGyroDataInBackground(session);
-                    int dataCount = Math.max(accData.length, gyroData.length);
-                    Log.d(LOG_TAG, "record " + recordIdStr + " session " + sessionIdStr +  " data count = " + accData.length + " " +  gyroData.length);
-                    for(int i = 0; i < dataCount; i++){
-                        String[] data = new String[10];
-                        data[0] = recordIdStr;
-                        data[1] = sessionIdStr;
-                        String[] accFormatData;
-                        String[] gyroFormatData;
-                        if(i < accData.length){
-                            accFormatData = accData[i].formatData();
-                        }
-                        else accFormatData = emptyEntry;
+            DocumentFile exportDocumentFile = imuCollectorDocumentFile.createFile("text/csv", exportFilename);
+            Uri exportUri = exportDocumentFile.getUri();
+            try(ParcelFileDescriptor pdf = app.getContentResolver().openFileDescriptor(exportUri, "w")){
+                try(FileOutputStream fileOutputStream = new FileOutputStream(pdf.getFileDescriptor());) {
+                    fileOutputStream.write(stringJoiner(header).getBytes());
+                    for (Session session : sessions) {
+                        String recordIdStr = String.valueOf(session.recordId);
+                        String sessionIdStr = String.valueOf(session.sessionId);
+                        AccSensorData[] accData = SessionRepository.getInstance().getSessionAccDataInBackground(session);
+                        GyroSensorData[] gyroData = SessionRepository.getInstance().getSessionGyroDataInBackground(session);
+                        int dataCount = Math.max(accData.length, gyroData.length);
+                        Log.d(LOG_TAG, "record " + recordIdStr + " session " + sessionIdStr + " data count = " + accData.length + " " + gyroData.length);
+                        for (int i = 0; i < dataCount; i++) {
+                            String[] data = new String[10];
+                            data[0] = recordIdStr;
+                            data[1] = sessionIdStr;
+                            String[] accFormatData;
+                            String[] gyroFormatData;
+                            if (i < accData.length) {
+                                accFormatData = accData[i].formatData();
+                            } else accFormatData = emptyEntry;
 
-                        if(i < gyroData.length){
-                            gyroFormatData = gyroData[i].formatData();
-                        }
-                        else gyroFormatData = emptyEntry;
+                            if (i < gyroData.length) {
+                                gyroFormatData = gyroData[i].formatData();
+                            } else gyroFormatData = emptyEntry;
 
-                        System.arraycopy(accFormatData, 0, data, 2, 4);
-                        System.arraycopy(gyroFormatData, 0, data, 6, 4);
-                        fileOutputStream.write(stringJoiner(data).getBytes());
+                            System.arraycopy(accFormatData, 0, data, 2, 4);
+                            System.arraycopy(gyroFormatData, 0, data, 6, 4);
+                            fileOutputStream.write(stringJoiner(data).getBytes());
+                        }
                     }
                 }
-                fileOutputStream.close();
-                pdf.close();
             }
             catch (Exception e){
                 e.printStackTrace();

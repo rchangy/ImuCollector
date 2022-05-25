@@ -134,17 +134,17 @@
 
         <com.google.android.material.slider.Slider
             android:id="@+id/slider_freq"
-            android:layout_width="250dp"
+            android:layout_width="200dp"
             android:layout_height="wrap_content"
             app:layout_constraintStart_toEndOf="@id/guideline_ver"
-            android:layout_marginLeft="-40dp"
+            android:layout_marginLeft="-70dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/text_freq"
             android:layout_marginTop="-7dp"
-            android:valueFrom="1"
+            android:valueFrom="5"
             android:valueTo="200"
             android:value="60"
-            android:stepSize="1.0"
+            android:stepSize="5.0"
             android:enabled="@{!homeViewModel.isCollecting}"
             />
 

@@ -27,12 +27,6 @@ import com.google.android.material.slider.Slider;
 import java.util.Timer;
 import java.util.TimerTask;
 
-/*
-計時器畫面 fragment，UI 設計在 res/layout/fragment_home.xml
-number picker 調整 record id
-slider 調整 sample rate
-按鈕開始/結束錄製，fragment 只負責更新 UI 上的時間字串
- */
 
 public class HomeFragment extends Fragment {
 
@@ -81,8 +75,7 @@ public class HomeFragment extends Fragment {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_home, container, false);
         binding.setHomeViewModel(homeViewModel);
         binding.setLifecycleOwner(getViewLifecycleOwner());
-        View root = binding.getRoot();
-        return root;
+        return binding.getRoot();
     }
 
     @Override
@@ -108,7 +101,6 @@ public class HomeFragment extends Fragment {
         if(!homeViewModel.isCollecting.getValue()){
             homeViewModel.startStopTimer();
             Log.d(LOG_TAG, "start timer");
-            // TODO: broadcast to service
             Intent intent = new Intent(BROADCAST_INTENT_ACTION);
             intent.putExtra(INTENT_EXTRA_KEY_ACTION, INTENT_EXTRA_ACTION_START);
             intent.putExtra(INTENT_EXTRA_KEY_RECORD_ID, homeViewModel.currentRecordId.getValue());
@@ -140,15 +132,9 @@ public class HomeFragment extends Fragment {
     public void onResume() {
         super.onResume();
         Log.d(LOG_TAG, "fragment resume");
-        if(!MotionDataService.isServiceRunning()){
-            Log.d(LOG_TAG, "restart service");
-            getActivity().startService(new Intent(requireActivity(), MotionDataService.class));
-            if(homeViewModel.isCollecting.getValue()){
-                Toast.makeText(requireActivity(), "Service has been killed", Toast.LENGTH_LONG).show();
-                homeViewModel.startStopTimer();
-            }
-        }
-        else{
+        boolean restart = homeViewModel.restartService();
+
+        if(!restart){   // service survives
             if(homeViewModel.isCollecting.getValue()){
                 Log.d(LOG_TAG, "restart timer");
                 timer = new Timer();

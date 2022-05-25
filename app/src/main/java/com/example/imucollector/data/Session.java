@@ -1,7 +1,10 @@
 package com.example.imucollector.data;
 
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
+
+import com.example.imucollector.dao.GyroSensorDataDao;
 
 import java.util.Date;
 

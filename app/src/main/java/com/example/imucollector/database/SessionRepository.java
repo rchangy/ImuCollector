@@ -10,11 +10,14 @@ import com.example.imucollector.data.GyroSensorData;
 import com.example.imucollector.data.Session;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class SessionRepository {
     private static final String LOG_TAG = "DBController";
     private static SessionRepository INSTANCE = null;
-
+    private static final int NUMBER_OF_THREADS = 1;
+    private ExecutorService pool;
     private SessionDao sessionDao;
     private AccSensorDataDao accSensorDataDao;
     private GyroSensorDataDao gyroSensorDataDao;
@@ -27,6 +30,7 @@ public class SessionRepository {
         accSensorDataDao = db.accSensorDataDao();
         gyroSensorDataDao = db.gyroSensorDataDao();
         allSessions = sessionDao.getAllSessions();
+        pool = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
     }
 
     public static SessionRepository getInstance(){
@@ -41,11 +45,11 @@ public class SessionRepository {
     }
 
     public void shutDownDatabaseThreadPool(){
-        SessionDatabase.pool.shutdown();
+        pool.shutdown();
     }
 
     public void deleteAllData(){
-        SessionDatabase.pool.execute(()->{
+        pool.execute(()->{
             sessionDao.deleteAllSessions();
             accSensorDataDao.deleteAllAccSensorData();
             gyroSensorDataDao.deleteAllGyroSensorData();
@@ -61,7 +65,7 @@ public class SessionRepository {
     }
 
     public void deleteSessions(Long[] timestamps){
-        SessionDatabase.pool.execute(()->{
+        pool.execute(()->{
             Session[] sessions = sessionDao.getSelectedSessions(timestamps);
             for(Session session : sessions){
                 deleteSessionInBackground(session);
@@ -76,19 +80,19 @@ public class SessionRepository {
     }
 
     public void insertAccData(AccSensorData[] data){
-        SessionDatabase.pool.execute(() ->{
+        pool.execute(() ->{
             accSensorDataDao.insertAccSensorData(data);
         });
     }
 
     public void insertGyroData(GyroSensorData[] data){
-        SessionDatabase.pool.execute(() ->{
+        pool.execute(() ->{
             gyroSensorDataDao.insertGyroSensorData(data);
         });
     }
 
     public void insertSession(Session session){
-        SessionDatabase.pool.execute(() ->{
+        pool.execute(() ->{
             sessionDao.insertSessions(session);
         });
     }

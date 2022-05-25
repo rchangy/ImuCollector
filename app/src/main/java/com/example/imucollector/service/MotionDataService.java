@@ -26,6 +26,7 @@ import com.example.imucollector.database.SessionRepository;
 
 import com.example.imucollector.sensor.SensorCollectorManager;
 import com.example.imucollector.ui.home.HomeFragment;
+import com.example.imucollector.ui.home.HomeViewModel;
 
 public class MotionDataService extends Service {
 
@@ -67,7 +68,7 @@ public class MotionDataService extends Service {
                     scm.endSession();
                 }
             }
-            else if(intent.getAction().equals(MainActivity.BROADCAST_INTENT_ACTION)){
+            else if(intent.getAction().equals(HomeViewModel.BROADCAST_INTENT_ACTION)){
                 isRunning = false;
                 if(wakeLock.isHeld()){
                     wakeLock.release();
@@ -82,23 +83,23 @@ public class MotionDataService extends Service {
 
     @Override
     public void onCreate() {
+        isRunning = true;
         super.onCreate();
         scm = new SensorCollectorManager(getApplicationContext());
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(HomeFragment.BROADCAST_INTENT_ACTION);
-        intentFilter.addAction(MainActivity.BROADCAST_INTENT_ACTION);
+        intentFilter.addAction(HomeViewModel.BROADCAST_INTENT_ACTION);
         registerReceiver(receiver, intentFilter);
 
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "imucollector::WakelockTag");
-        isRunning = true;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(LOG_TAG, "start service");
-        super.onStartCommand(intent, flags, startId);
 
+        super.onStartCommand(intent, flags, startId);
         return START_STICKY;
     }
 
@@ -151,6 +152,7 @@ public class MotionDataService extends Service {
         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         NotificationManager service = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         service.createNotificationChannel(channel);
+
         return channelId;
     }
 
