@@ -48,36 +48,6 @@ public class MotionDataService extends Service {
     BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-//            if(intent.getAction().equals(HomeFragment.BROADCAST_INTENT_ACTION)) {
-//                String action = intent.getStringExtra(HomeFragment.INTENT_EXTRA_KEY_ACTION);
-//                Log.d(LOG_TAG, "receive intent: " + action);
-//                if(action.equals(HomeFragment.INTENT_EXTRA_ACTION_START)){
-//                    currentRecordId = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_RECORD_ID, -1);
-//                    currentSessionId = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_SESSION_ID, -1);
-//                    currentFreq = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_FREQ, -1);
-//                    sessionStartTimestamp = intent.getLongExtra(HomeFragment.INTENT_EXTRA_KEY_TIMESTAMP, -1);
-//                    if(currentRecordId != -1 && currentSessionId != -1 && currentFreq != -1 && sessionStartTimestamp != -1){
-//                        wakeLock.acquire();
-//                        startForeground();
-//                        scm.startNewSession(currentRecordId, currentSessionId, currentFreq);
-//                        writeSessionToDB();
-//                    }
-//                }
-//                else if(action.equals(HomeFragment.INTENT_EXTRA_ACTION_STOP)){
-//                    wakeLock.release();
-//                    stopForeground(true);
-//                    scm.endSession();
-//                }
-//            }
-//            else if(intent.getAction().equals(HomeViewModel.BROADCAST_INTENT_ACTION)){
-//                isRunning = false;
-//                if(wakeLock.isHeld()){
-//                    wakeLock.release();
-//                    scm.endSession();
-//                }
-//                SessionRepository.getInstance().shutDownDatabaseThreadPool();
-//                stopSelf();
-//            }
             if(intent.getAction().equals(HomeViewModel.BROADCAST_INTENT_ACTION)){
                 isRunning = false;
                 if(wakeLock.isHeld()){

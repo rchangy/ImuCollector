@@ -85,7 +85,9 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.503"
             app:layout_constraintStart_toEndOf="@id/guideline_ver2"
-            app:layout_constraintTop_toBottomOf="@+id/guideline_hor2" />
+            app:layout_constraintTop_toBottomOf="@+id/guideline_hor2"
+            android:enabled="@{!homeViewModel.isCollecting}"
+            />
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_hor3"
