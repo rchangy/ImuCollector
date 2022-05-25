@@ -32,6 +32,7 @@ public class MotionDataService extends Service {
 
     private static final String LOG_TAG = "MotionDataService";
     private static boolean isRunning;
+    public static String BROADCAST_INTENT_ACTION = "service stopped";
 
     private PowerManager.WakeLock wakeLock;
 
@@ -47,28 +48,37 @@ public class MotionDataService extends Service {
     BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals(HomeFragment.BROADCAST_INTENT_ACTION)) {
-                String action = intent.getStringExtra(HomeFragment.INTENT_EXTRA_KEY_ACTION);
-                Log.d(LOG_TAG, "receive intent: " + action);
-                if(action.equals(HomeFragment.INTENT_EXTRA_ACTION_START)){
-                    currentRecordId = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_RECORD_ID, -1);
-                    currentSessionId = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_SESSION_ID, -1);
-                    currentFreq = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_FREQ, -1);
-                    sessionStartTimestamp = intent.getLongExtra(HomeFragment.INTENT_EXTRA_KEY_TIMESTAMP, -1);
-                    if(currentRecordId != -1 && currentSessionId != -1 && currentFreq != -1 && sessionStartTimestamp != -1){
-                        wakeLock.acquire();
-                        startForeground();
-                        scm.startNewSession(currentRecordId, currentSessionId, currentFreq);
-                        writeSessionToDB();
-                    }
-                }
-                else if(action.equals(HomeFragment.INTENT_EXTRA_ACTION_STOP)){
-                    wakeLock.release();
-                    stopForeground(true);
-                    scm.endSession();
-                }
-            }
-            else if(intent.getAction().equals(HomeViewModel.BROADCAST_INTENT_ACTION)){
+//            if(intent.getAction().equals(HomeFragment.BROADCAST_INTENT_ACTION)) {
+//                String action = intent.getStringExtra(HomeFragment.INTENT_EXTRA_KEY_ACTION);
+//                Log.d(LOG_TAG, "receive intent: " + action);
+//                if(action.equals(HomeFragment.INTENT_EXTRA_ACTION_START)){
+//                    currentRecordId = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_RECORD_ID, -1);
+//                    currentSessionId = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_SESSION_ID, -1);
+//                    currentFreq = intent.getIntExtra(HomeFragment.INTENT_EXTRA_KEY_FREQ, -1);
+//                    sessionStartTimestamp = intent.getLongExtra(HomeFragment.INTENT_EXTRA_KEY_TIMESTAMP, -1);
+//                    if(currentRecordId != -1 && currentSessionId != -1 && currentFreq != -1 && sessionStartTimestamp != -1){
+//                        wakeLock.acquire();
+//                        startForeground();
+//                        scm.startNewSession(currentRecordId, currentSessionId, currentFreq);
+//                        writeSessionToDB();
+//                    }
+//                }
+//                else if(action.equals(HomeFragment.INTENT_EXTRA_ACTION_STOP)){
+//                    wakeLock.release();
+//                    stopForeground(true);
+//                    scm.endSession();
+//                }
+//            }
+//            else if(intent.getAction().equals(HomeViewModel.BROADCAST_INTENT_ACTION)){
+//                isRunning = false;
+//                if(wakeLock.isHeld()){
+//                    wakeLock.release();
+//                    scm.endSession();
+//                }
+//                SessionRepository.getInstance().shutDownDatabaseThreadPool();
+//                stopSelf();
+//            }
+            if(intent.getAction().equals(HomeViewModel.BROADCAST_INTENT_ACTION)){
                 isRunning = false;
                 if(wakeLock.isHeld()){
                     wakeLock.release();
@@ -87,7 +97,7 @@ public class MotionDataService extends Service {
         super.onCreate();
         scm = new SensorCollectorManager(getApplicationContext());
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(HomeFragment.BROADCAST_INTENT_ACTION);
+//        intentFilter.addAction(HomeFragment.BROADCAST_INTENT_ACTION);
         intentFilter.addAction(HomeViewModel.BROADCAST_INTENT_ACTION);
         registerReceiver(receiver, intentFilter);
 
@@ -98,8 +108,17 @@ public class MotionDataService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(LOG_TAG, "start service");
-
         super.onStartCommand(intent, flags, startId);
+        currentRecordId = intent.getIntExtra(HomeViewModel.INTENT_EXTRA_KEY_RECORD_ID, -1);
+        currentSessionId = intent.getIntExtra(HomeViewModel.INTENT_EXTRA_KEY_SESSION_ID, -1);
+        currentFreq = intent.getIntExtra(HomeViewModel.INTENT_EXTRA_KEY_FREQ, -1);
+        sessionStartTimestamp = intent.getLongExtra(HomeViewModel.INTENT_EXTRA_KEY_TIMESTAMP, -1);
+        if(currentRecordId != -1 && currentSessionId != -1 && currentFreq != -1 && sessionStartTimestamp != -1){
+            wakeLock.acquire();
+            startForeground();
+            scm.startNewSession(currentRecordId, currentSessionId, currentFreq);
+            writeSessionToDB();
+        }
         return START_STICKY;
     }
 
@@ -113,10 +132,12 @@ public class MotionDataService extends Service {
         Log.d(LOG_TAG, "service stopped, unregister listener");
         isRunning = false;
         unregisterReceiver(receiver);
+        stopForeground(true);
         if(wakeLock.isHeld()){
             wakeLock.release();
             scm.endSession();
         }
+        sendBroadcast(new Intent(BROADCAST_INTENT_ACTION));
         super.onDestroy();
     }
 

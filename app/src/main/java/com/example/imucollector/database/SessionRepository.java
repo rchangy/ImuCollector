@@ -14,7 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class SessionRepository {
-    private static final String LOG_TAG = "DBController";
+    private static final String LOG_TAG = "SessionRepository";
     private static SessionRepository INSTANCE = null;
     private static final int NUMBER_OF_THREADS = 1;
     private ExecutorService pool;
@@ -39,28 +39,47 @@ public class SessionRepository {
         }
         return INSTANCE;
     }
+    public void shutDownDatabaseThreadPool(){
+        pool.shutdown();
+    }
 
     public LiveData<List<Session>> getAllSessions(){
         return allSessions;
     }
 
-    public void shutDownDatabaseThreadPool(){
-        pool.shutdown();
+    public void insertSession(Session session){
+        pool.execute(() ->{
+            sessionDao.insertSessions(session);
+        });
     }
 
-    public void deleteAllData(){
-        pool.execute(()->{
-            sessionDao.deleteAllSessions();
-            accSensorDataDao.deleteAllAccSensorData();
-            gyroSensorDataDao.deleteAllGyroSensorData();
+    public void insertAccData(AccSensorData[] data){
+        pool.execute(() ->{
+            accSensorDataDao.insertAccSensorData(data);
+        });
+    }
+
+    public void insertGyroData(GyroSensorData[] data){
+        pool.execute(() ->{
+            gyroSensorDataDao.insertGyroSensorData(data);
         });
     }
 
     public Session[] getAllSessionsInBackground(){
-        return sessionDao.getAllSessionsArray();
+        Session[] sessions = sessionDao.getAllSessionsArray();
+        return getSensorDataForSessions(sessions);
     }
+
     public Session[] getSelectedSessionsInBackground(Long[] timestamps){
         Session[] sessions = sessionDao.getSelectedSessions(timestamps);
+        return getSensorDataForSessions(sessions);
+    }
+
+    private Session[] getSensorDataForSessions(Session[] sessions){
+        for(Session session : sessions){
+            session.setAccSensorData(accSensorDataDao.getAccSensorDataBySession(session.recordId, session.sessionId));
+            session.setGyroSensorData(gyroSensorDataDao.getGyroSensorDataBySession(session.recordId, session.sessionId));
+        }
         return sessions;
     }
 
@@ -77,35 +96,5 @@ public class SessionRepository {
         sessionDao.deleteSessions(session);
         accSensorDataDao.deleteAccSensorDataBySession(session.recordId, session.sessionId);
         gyroSensorDataDao.deleteGyroSensorDataBySession(session.recordId, session.sessionId);
-    }
-
-    public void insertAccData(AccSensorData[] data){
-        pool.execute(() ->{
-            accSensorDataDao.insertAccSensorData(data);
-        });
-    }
-
-    public void insertGyroData(GyroSensorData[] data){
-        pool.execute(() ->{
-            gyroSensorDataDao.insertGyroSensorData(data);
-        });
-    }
-
-    public void insertSession(Session session){
-        pool.execute(() ->{
-            sessionDao.insertSessions(session);
-        });
-    }
-
-    public AccSensorData[] getSessionAccDataInBackground(Session session){
-        return accSensorDataDao.getAccSensorDataBySession(session.recordId, session.sessionId);
-    }
-
-    public AccSensorData[] getAllAccDataInBackground(){
-        return accSensorDataDao.getAllAccSensorData();
-    }
-
-    public GyroSensorData[] getSessionGyroDataInBackground(Session session){
-        return gyroSensorDataDao.getGyroSensorDataBySession(session.recordId, session.sessionId);
     }
 }

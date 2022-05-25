@@ -6,7 +6,10 @@ import androidx.lifecycle.MutableLiveData;
 
 
 import android.app.Application;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Log;
@@ -53,6 +56,28 @@ public class HomeViewModel extends AndroidViewModel{
     private final CsvExporter csvExporter = new CsvExporter();
     private final List<Long> selectedSession = new ArrayList<>();
 
+    private Intent intentService;
+    public static final String INTENT_EXTRA_KEY_ACTION = "Action";
+    public static final String INTENT_EXTRA_ACTION_START = "Start";
+    public static final String INTENT_EXTRA_ACTION_STOP = "Stop";
+    public static final String INTENT_EXTRA_KEY_SESSION_ID = "SessionId";
+    public static final String INTENT_EXTRA_KEY_RECORD_ID = "RecordId";
+    public static final String INTENT_EXTRA_KEY_FREQ = "Freq";
+    public static final String INTENT_EXTRA_KEY_TIMESTAMP = "Timestamp";
+    BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals(MotionDataService.BROADCAST_INTENT_ACTION)){
+                if(isCollecting.getValue()){
+                    Log.d(LOG_TAG, "receive stop");
+                    setIsCollecting(false);
+                    incCurrentSessionId();
+                    timerText.setValue("00 : 00 : 000");
+                }
+            }
+        }
+    };
+
     public HomeViewModel(Application application, SavedStateHandle savedStateHandle) {
         super(application);
         sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplication());
@@ -60,20 +85,23 @@ public class HomeViewModel extends AndroidViewModel{
         this.savedStateHandle = savedStateHandle;
         load();
         SessionRepository.getInstance().init(SessionDatabase.getInstance(getApplication()));
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(MotionDataService.BROADCAST_INTENT_ACTION);
+        getApplication().registerReceiver(receiver, intentFilter);
     }
 
-    public boolean restartService(){
-        if(!MotionDataService.isServiceRunning()){
-            Log.d(LOG_TAG, "restart service");
-            getApplication().startService(new Intent(getApplication(), MotionDataService.class));
-            if(isCollecting.getValue()){
-                Toast.makeText(getApplication(), "Service has been killed", Toast.LENGTH_LONG).show();
-                startStopTimer();
-            }
-            return true;
-        }
-        return false;
-    }
+//    public boolean restartService(){
+//        if(!MotionDataService.isServiceRunning()){
+//            Log.d(LOG_TAG, "restart service");
+//            getApplication().startService(new Intent(getApplication(), MotionDataService.class));
+//            if(isCollecting.getValue()){
+//                Toast.makeText(getApplication(), "Service has been killed", Toast.LENGTH_LONG).show();
+//                startStopTimer();
+//            }
+//            return true;
+//        }
+//        return false;
+//    }
     public void load(){
         int defaultFreq = 60;
         if(savedStateHandle.contains(PREFERENCE_FILE_KEY_FREQ)) currentFreq = savedStateHandle.getLiveData(PREFERENCE_FILE_KEY_FREQ);
@@ -164,23 +192,42 @@ public class HomeViewModel extends AndroidViewModel{
             setIsCollecting(false);
             incCurrentSessionId();
             timerText.setValue("00 : 00 : 000");
-
+            getApplication().stopService(intentService);
         }
         else{
             // start timer
             setSessionStartTimestamp(System.currentTimeMillis());
             setIsCollecting(true);
+            intentService = new Intent(getApplication(), MotionDataService.class);
+            intentService.putExtra(INTENT_EXTRA_KEY_ACTION, INTENT_EXTRA_ACTION_START);
+            intentService.putExtra(INTENT_EXTRA_KEY_RECORD_ID, currentRecordId.getValue());
+            intentService.putExtra(INTENT_EXTRA_KEY_SESSION_ID, currentSessionId.getValue());
+            intentService.putExtra(INTENT_EXTRA_KEY_FREQ, currentFreq.getValue());
+            intentService.putExtra(INTENT_EXTRA_KEY_TIMESTAMP, getSessionStartTimestamp());
+            getApplication().startService(intentService);
         }
     }
 
     @Override
     protected void onCleared() {
-        getApplication().sendBroadcast(new Intent(BROADCAST_INTENT_ACTION));
-        setIsCollecting(false);
+        if(isCollecting.getValue()){
+            Log.d(LOG_TAG, "on cleared");
+            setIsCollecting(false);
+            incCurrentSessionId();
+            getApplication().sendBroadcast(new Intent(BROADCAST_INTENT_ACTION));
+        }
+        else{
+            SessionRepository.getInstance().shutDownDatabaseThreadPool();
+        }
+        getApplication().unregisterReceiver(receiver);
+        save();
         super.onCleared();
     }
 
     public void deleteSessions(){
+        if(selectedSession.isEmpty()){
+            return;
+        }
         SessionRepository.getInstance().deleteSessions(selectedSession.toArray(new Long[0]));
         selectedSession.clear();
     }
@@ -188,6 +235,7 @@ public class HomeViewModel extends AndroidViewModel{
     public void exportSessions(Uri uri){
         if(uri == null){
             Log.d(LOG_TAG, "export failed: null result uri");
+            Toast.makeText(getApplication(), "Export failed ;(", Toast.LENGTH_LONG);
             return;
         }
         List<Long> copy = new ArrayList<>(selectedSession);

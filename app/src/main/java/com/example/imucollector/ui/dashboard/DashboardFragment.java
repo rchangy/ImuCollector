@@ -15,6 +15,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.Toast;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -116,6 +118,10 @@ public class DashboardFragment extends Fragment {
     }
 
     public void exportSessions(){
+        if(adapter.getCurrentList().isEmpty()){
+            Toast.makeText(getContext(), "No session to export", Toast.LENGTH_SHORT).show();
+            return;
+        }
         resultLauncher.launch(null);
     }
 

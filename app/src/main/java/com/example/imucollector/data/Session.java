@@ -4,8 +4,6 @@ import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
-import com.example.imucollector.dao.GyroSensorDataDao;
-
 import java.util.Date;
 
 @Entity(tableName = "session")
@@ -15,6 +13,10 @@ public class Session {
     public final int freq;
     public final int recordId;
     public final int sessionId;
+    @Ignore
+    private AccSensorData[] accSensorData;
+    @Ignore
+    private GyroSensorData[] gyroSensorData;
 
     public Session(long timestamp, int freq, int recordId, int sessionId){
         this.timestamp = timestamp;
@@ -29,4 +31,12 @@ public class Session {
 
     public Date getDate() {return new Date(timestamp);}
 
+    public void setAccSensorData(AccSensorData[] accSensorData){
+        this.accSensorData = accSensorData;
+    }
+    public void setGyroSensorData(GyroSensorData[] gyroSensorData){
+        this.gyroSensorData = gyroSensorData;
+    }
+    public AccSensorData[] getAccSensorData() { return accSensorData; }
+    public GyroSensorData[] getGyroSensorData() {return  gyroSensorData; }
 }

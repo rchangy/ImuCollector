@@ -54,6 +54,9 @@ public class CsvExporter {
             else{
                 sessions = SessionRepository.getInstance().getSelectedSessionsInBackground(selectedSession.toArray(new Long[0]));
             }
+            if(sessions == null || sessions.length == 0){
+                return 0;
+            }
             sessionNum = sessions.length;
             DocumentFile exportDocumentFile = imuCollectorDocumentFile.createFile("text/csv", exportFilename);
             Uri exportUri = exportDocumentFile.getUri();
@@ -63,8 +66,8 @@ public class CsvExporter {
                     for (Session session : sessions) {
                         String recordIdStr = String.valueOf(session.recordId);
                         String sessionIdStr = String.valueOf(session.sessionId);
-                        AccSensorData[] accData = SessionRepository.getInstance().getSessionAccDataInBackground(session);
-                        GyroSensorData[] gyroData = SessionRepository.getInstance().getSessionGyroDataInBackground(session);
+                        AccSensorData[] accData = session.getAccSensorData();
+                        GyroSensorData[] gyroData = session.getGyroSensorData();
                         int dataCount = Math.max(accData.length, gyroData.length);
                         Log.d(LOG_TAG, "record " + recordIdStr + " session " + sessionIdStr + " data count = " + accData.length + " " + gyroData.length);
                         for (int i = 0; i < dataCount; i++) {
@@ -105,10 +108,18 @@ public class CsvExporter {
                 Toast.makeText(app, "Export failed ;(", Toast.LENGTH_LONG).show();
                 Log.d(LOG_TAG, "Export failed");
             }
+            else if(integer == 0){
+                Toast.makeText(app, "No session to export", Toast.LENGTH_LONG).show();
+            }
             else{
-                Toast.makeText(app, "Export succeeded :)", Toast.LENGTH_LONG).show();
+                String stringSession = "sessions";
+                if(integer == 1){
+                    stringSession = "session";
+                }
+                Toast.makeText(app, integer + " " + stringSession + " exported :)", Toast.LENGTH_LONG).show();
                 Log.d(LOG_TAG, "Export succeeded, " + integer + " sessions exported");
             }
+
         }
 
         public String stringJoiner(String[] arr) {

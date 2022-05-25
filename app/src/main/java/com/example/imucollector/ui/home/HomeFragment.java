@@ -1,8 +1,11 @@
 package com.example.imucollector.ui.home;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import androidx.databinding.DataBindingUtil;
 
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -32,14 +35,14 @@ public class HomeFragment extends Fragment {
 
     private static final String LOG_TAG = "HomeFragment";
 
-    public static final String BROADCAST_INTENT_ACTION = "StartStopSession";
-    public static final String INTENT_EXTRA_KEY_ACTION = "Action";
-    public static final String INTENT_EXTRA_ACTION_START = "Start";
-    public static final String INTENT_EXTRA_ACTION_STOP = "Stop";
-    public static final String INTENT_EXTRA_KEY_SESSION_ID = "SessionId";
-    public static final String INTENT_EXTRA_KEY_RECORD_ID = "RecordId";
-    public static final String INTENT_EXTRA_KEY_FREQ = "Freq";
-    public static final String INTENT_EXTRA_KEY_TIMESTAMP = "Timestamp";
+//    public static final String BROADCAST_INTENT_ACTION = "StartStopSession";
+//    public static final String INTENT_EXTRA_KEY_ACTION = "Action";
+//    public static final String INTENT_EXTRA_ACTION_START = "Start";
+//    public static final String INTENT_EXTRA_ACTION_STOP = "Stop";
+//    public static final String INTENT_EXTRA_KEY_SESSION_ID = "SessionId";
+//    public static final String INTENT_EXTRA_KEY_RECORD_ID = "RecordId";
+//    public static final String INTENT_EXTRA_KEY_FREQ = "Freq";
+//    public static final String INTENT_EXTRA_KEY_TIMESTAMP = "Timestamp";
 
     private HomeViewModel homeViewModel;
     private FragmentHomeBinding binding;
@@ -67,6 +70,20 @@ public class HomeFragment extends Fragment {
 
     private Button buttonTimer;
 
+    BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals(MotionDataService.BROADCAST_INTENT_ACTION)){
+                if(timer != null) {
+                    // service killed by system
+                    timer.cancel();
+                    timer = null;
+                    Toast.makeText(getContext(), "Service has been killed", Toast.LENGTH_LONG).show();
+                }
+            }
+        }
+    };
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         homeViewModel =
@@ -83,6 +100,7 @@ public class HomeFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         sliderFreq = binding.sliderFreq;
         sliderFreq.addOnChangeListener(changeListener);
+        sliderFreq.setValue(homeViewModel.currentFreq.getValue());
         numberPicker = binding.numberPickerRecordId;
         numberPicker.setOnValueChangedListener(changeListenerNumberPicker);
         numberPicker.setMaxValue(NUMBER_PICKER_MAX_VALUE);
@@ -98,16 +116,19 @@ public class HomeFragment extends Fragment {
     }
 
     public void startStopTimer(){
+
         if(!homeViewModel.isCollecting.getValue()){
+
             homeViewModel.startStopTimer();
             Log.d(LOG_TAG, "start timer");
-            Intent intent = new Intent(BROADCAST_INTENT_ACTION);
-            intent.putExtra(INTENT_EXTRA_KEY_ACTION, INTENT_EXTRA_ACTION_START);
-            intent.putExtra(INTENT_EXTRA_KEY_RECORD_ID, homeViewModel.currentRecordId.getValue());
-            intent.putExtra(INTENT_EXTRA_KEY_SESSION_ID, homeViewModel.currentSessionId.getValue());
-            intent.putExtra(INTENT_EXTRA_KEY_FREQ, homeViewModel.currentFreq.getValue());
-            intent.putExtra(INTENT_EXTRA_KEY_TIMESTAMP, homeViewModel.getSessionStartTimestamp());
-            getContext().sendBroadcast(intent);
+//            Intent intent = new Intent(getActivity(), MotionDataService.class);
+//            intent.putExtra(INTENT_EXTRA_KEY_ACTION, INTENT_EXTRA_ACTION_START);
+//            intent.putExtra(INTENT_EXTRA_KEY_RECORD_ID, homeViewModel.currentRecordId.getValue());
+//            intent.putExtra(INTENT_EXTRA_KEY_SESSION_ID, homeViewModel.currentSessionId.getValue());
+//            intent.putExtra(INTENT_EXTRA_KEY_FREQ, homeViewModel.currentFreq.getValue());
+//            intent.putExtra(INTENT_EXTRA_KEY_TIMESTAMP, homeViewModel.getSessionStartTimestamp());
+////            getContext().sendBroadcast(intent);
+//            getActivity().startService(intent);
             timer = new Timer();
             timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
@@ -119,11 +140,8 @@ public class HomeFragment extends Fragment {
         }
         else{
             Log.d(LOG_TAG, "stop timer");
-            Intent intent = new Intent(BROADCAST_INTENT_ACTION);
-            intent.putExtra(INTENT_EXTRA_KEY_ACTION, INTENT_EXTRA_ACTION_STOP);
-            getContext().sendBroadcast(intent);
-
             timer.cancel();
+            timer = null;
             homeViewModel.startStopTimer();
         }
     }
@@ -132,21 +150,50 @@ public class HomeFragment extends Fragment {
     public void onResume() {
         super.onResume();
         Log.d(LOG_TAG, "fragment resume");
-        boolean restart = homeViewModel.restartService();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(MotionDataService.BROADCAST_INTENT_ACTION);
+        getActivity().registerReceiver(receiver, intentFilter);
 
-        if(!restart){   // service survives
-            if(homeViewModel.isCollecting.getValue()){
-                Log.d(LOG_TAG, "restart timer");
-                timer = new Timer();
-                timer.scheduleAtFixedRate(new TimerTask() {
-                    @Override
-                    public void run() {
-                        String text = homeViewModel.getTimeText();
-                        getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
-                    }
-                }, 0, 10);
-            }
+        if(homeViewModel.isCollecting.getValue()){
+            Log.d(LOG_TAG, "restart timer");
+            timer = new Timer();
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    String text = homeViewModel.getTimeText();
+                    getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
+                }
+            }, 0, 10);
+//            if(MotionDataService.isServiceRunning()){
+//                // service survive
+//                Log.d(LOG_TAG, "restart timer");
+//                timer = new Timer();
+//                timer.scheduleAtFixedRate(new TimerTask() {
+//                    @Override
+//                    public void run() {
+//                        String text = homeViewModel.getTimeText();
+//                        getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
+//                    }
+//                }, 0, 10);
+//            }
+//            else{   // service killed
+//                Toast.makeText(getContext(), "Service has been killed", Toast.LENGTH_LONG).show();
+//                homeViewModel.startStopTimer();
+//            }
         }
+//        if(MotionDataService.isServiceRunning()){   // service survives
+//            if(homeViewModel.isCollecting.getValue()){
+//                Log.d(LOG_TAG, "restart timer");
+//                timer = new Timer();
+//                timer.scheduleAtFixedRate(new TimerTask() {
+//                    @Override
+//                    public void run() {
+//                        String text = homeViewModel.getTimeText();
+//                        getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
+//                    }
+//                }, 0, 10);
+//            }
+//        }
     }
 
     @Override
@@ -156,6 +203,7 @@ public class HomeFragment extends Fragment {
         if(homeViewModel.isCollecting.getValue()){
             timer.cancel();
         }
+        getActivity().unregisterReceiver(receiver);
     }
 
     @Override
