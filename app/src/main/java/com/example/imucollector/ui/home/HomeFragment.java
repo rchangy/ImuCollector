@@ -18,6 +18,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.SavedStateViewModelFactory;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStoreOwner;
@@ -41,7 +43,7 @@ public class HomeFragment extends Fragment {
     private final Slider.OnChangeListener changeListener = new Slider.OnChangeListener() {
         @Override
         public void onValueChange(@androidx.annotation.NonNull Slider slider, float value, boolean fromUser) {
-            homeViewModel.setCurrentFreq((int) value);
+            homeViewModel.setCurrentSampleRate((int) value);
             Log.d(LOG_TAG, "slider value changed to " + value);
         }
     };
@@ -58,22 +60,7 @@ public class HomeFragment extends Fragment {
     private final int NUMBER_PICKER_MIN_VALUE = 0;
 
     private Timer timer = new Timer();
-
     private Button buttonTimer;
-
-    BroadcastReceiver receiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals(MotionDataService.BROADCAST_INTENT_ACTION)){
-                if(timer != null) {
-                    // service killed by system
-                    timer.cancel();
-                    timer = null;
-                    Toast.makeText(getContext(), "Service has been killed", Toast.LENGTH_LONG).show();
-                }
-            }
-        }
-    };
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -91,7 +78,7 @@ public class HomeFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         sliderFreq = binding.sliderFreq;
         sliderFreq.addOnChangeListener(changeListener);
-        sliderFreq.setValue(homeViewModel.currentFreq.getValue());
+        sliderFreq.setValue(homeViewModel.currentSampleRate.getValue());
         numberPicker = binding.numberPickerRecordId;
         numberPicker.setOnValueChangedListener(changeListenerNumberPicker);
         numberPicker.setMaxValue(NUMBER_PICKER_MAX_VALUE);
@@ -101,41 +88,37 @@ public class HomeFragment extends Fragment {
         buttonTimer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startStopTimer();
+                homeViewModel.startStopTimer();
             }
         });
-    }
-
-    public void startStopTimer(){
-
-        if(!homeViewModel.isCollecting.getValue()){
-
-            homeViewModel.startStopTimer();
-            Log.d(LOG_TAG, "start timer");
-            timer = new Timer();
-            timer.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    String text = homeViewModel.getTimeText();
-                    getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
+        homeViewModel.isCollecting.observe(getViewLifecycleOwner(), new Observer<Boolean>() {
+            @Override
+            public void onChanged(Boolean aBoolean) {
+                if(aBoolean){
+                    // start recording
+                    timer = new Timer();
+                    timer.scheduleAtFixedRate(new TimerTask() {
+                        @Override
+                        public void run() {
+                            String text = homeViewModel.getTimeText();
+                            getActivity().runOnUiThread(() -> homeViewModel.timerText.setValue(text));
+                        }
+                    }, 0, 10);
                 }
-            }, 0, 10);
-        }
-        else{
-            Log.d(LOG_TAG, "stop timer");
-            timer.cancel();
-            timer = null;
-            homeViewModel.startStopTimer();
-        }
+                else{
+                    timer.cancel();
+                    timer = null;
+                    Log.d(LOG_TAG, "stop timer");
+                    homeViewModel.timerText.setValue("00 : 00 : 000");
+                }
+            }
+        });
     }
 
     @Override
     public void onResume() {
         super.onResume();
         Log.d(LOG_TAG, "fragment resume");
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(MotionDataService.BROADCAST_INTENT_ACTION);
-        getActivity().registerReceiver(receiver, intentFilter);
 
         if(homeViewModel.isCollecting.getValue()){
             Log.d(LOG_TAG, "restart timer");
@@ -157,7 +140,6 @@ public class HomeFragment extends Fragment {
         if(homeViewModel.isCollecting.getValue()){
             timer.cancel();
         }
-        getActivity().unregisterReceiver(receiver);
     }
 
     @Override

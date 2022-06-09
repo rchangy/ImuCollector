@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.IBinder;
@@ -17,7 +18,9 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.app.NotificationCompat;
+import androidx.preference.PreferenceManager;
 
 import com.example.imucollector.MainActivity;
 import com.example.imucollector.R;
@@ -25,94 +28,111 @@ import com.example.imucollector.data.Session;
 import com.example.imucollector.database.SessionRepository;
 
 import com.example.imucollector.sensor.SensorCollectorManager;
-import com.example.imucollector.ui.home.HomeFragment;
 import com.example.imucollector.ui.home.HomeViewModel;
 
 public class MotionDataService extends Service {
 
     private static final String LOG_TAG = "MotionDataService";
-    private static boolean isRunning;
-    public static String BROADCAST_INTENT_ACTION = "service stopped";
+
+    private SharedPreferences sharedPref;
+    private SharedPreferences.Editor editor;
+
+    private String PREFERENCE_FILE_KEY_SESSION_ID;
+    private String PREFERENCE_FILE_KEY_SAMPLE_RATE;
+    private String PREFERENCE_FILE_KEY_TIMESTAMP;
+    private String PREFERENCE_FILE_KEY_IS_COLLECTING;
+
+    private String INTENT_EXTRA_KEY_RECORD_ID;
 
     private PowerManager.WakeLock wakeLock;
-
     private SensorCollectorManager scm;
 
     // session
-    private int currentFreq;
+    private int currentSampleRate;
     private int currentSessionId;
     private int currentRecordId;
     private long sessionStartTimestamp;
 
-    // broadcast receiver
-    BroadcastReceiver receiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals(HomeViewModel.BROADCAST_INTENT_ACTION)){
-                isRunning = false;
-                if(wakeLock.isHeld()){
-                    wakeLock.release();
-                    scm.endSession();
-                }
-                SessionRepository.getInstance().shutDownDatabaseThreadPool();
-                stopSelf();
-            }
-        }
-    };
-
-
     @Override
     public void onCreate() {
-        isRunning = true;
         super.onCreate();
-        scm = new SensorCollectorManager(getApplicationContext());
-        IntentFilter intentFilter = new IntentFilter();
-//        intentFilter.addAction(HomeFragment.BROADCAST_INTENT_ACTION);
-        intentFilter.addAction(HomeViewModel.BROADCAST_INTENT_ACTION);
-        registerReceiver(receiver, intentFilter);
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplication());
+        editor = sharedPref.edit();
 
+        PREFERENCE_FILE_KEY_SESSION_ID = getApplication().getString(R.string.shared_pref_session_id);
+        PREFERENCE_FILE_KEY_SAMPLE_RATE = getApplication().getString(R.string.shared_pref_sample_rate);
+        PREFERENCE_FILE_KEY_TIMESTAMP = getApplication().getString(R.string.shared_pref_timestamp);
+        PREFERENCE_FILE_KEY_IS_COLLECTING = getApplication().getString(R.string.shared_pref_is_collecting);
+
+        INTENT_EXTRA_KEY_RECORD_ID = getApplication().getString(R.string.intent_extra_key_record_id);
+
+        scm = new SensorCollectorManager(getApplicationContext());
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "imucollector::WakelockTag");
+        SessionRepository.getInstance().init(getApplication());
+
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i(LOG_TAG, "start service");
+        Log.i(LOG_TAG, "receive start command");
         super.onStartCommand(intent, flags, startId);
-        currentRecordId = intent.getIntExtra(HomeViewModel.INTENT_EXTRA_KEY_RECORD_ID, -1);
-        currentSessionId = intent.getIntExtra(HomeViewModel.INTENT_EXTRA_KEY_SESSION_ID, -1);
-        currentFreq = intent.getIntExtra(HomeViewModel.INTENT_EXTRA_KEY_FREQ, -1);
-        sessionStartTimestamp = intent.getLongExtra(HomeViewModel.INTENT_EXTRA_KEY_TIMESTAMP, -1);
-        if(currentRecordId != -1 && currentSessionId != -1 && currentFreq != -1 && sessionStartTimestamp != -1){
-            wakeLock.acquire();
-            startForeground();
-            scm.startNewSession(currentRecordId, currentSessionId, currentFreq);
-            writeSessionToDB();
+
+        // get session data
+        boolean isCollecting = sharedPref.getBoolean(PREFERENCE_FILE_KEY_IS_COLLECTING, false);
+        currentRecordId = intent.getIntExtra(INTENT_EXTRA_KEY_RECORD_ID, -1);
+        currentSessionId = sharedPref.getInt(PREFERENCE_FILE_KEY_SESSION_ID, 0);
+        currentSampleRate = sharedPref.getInt(PREFERENCE_FILE_KEY_SAMPLE_RATE, -1);
+
+        if(!isCollecting && currentRecordId != -1 && currentSampleRate != -1){
+            startRecording();
+        }
+        else{
+            Log.d(LOG_TAG, "start session failed, record id: " + currentRecordId +
+                    ", session id: " + currentSessionId + ", freq: " + currentSampleRate +
+                    ", timestamp: " + sessionStartTimestamp);
+            stopSelf();
+            return START_NOT_STICKY;
         }
         return START_STICKY;
     }
 
     private void writeSessionToDB(){
-        Session session = new Session(sessionStartTimestamp, currentFreq, currentRecordId, currentSessionId);
+        Session session = new Session(sessionStartTimestamp, currentSampleRate, currentRecordId, currentSessionId);
         SessionRepository.getInstance().insertSession(session);
+    }
+
+    private void startRecording(){
+        Log.d(LOG_TAG, "start recording");
+        startForeground();
+        wakeLock.acquire();
+        scm.startNewSession(currentRecordId, currentSessionId, currentSampleRate);
+        editor.putBoolean(PREFERENCE_FILE_KEY_IS_COLLECTING, true);
+        sessionStartTimestamp = System.currentTimeMillis();
+        editor.putLong(PREFERENCE_FILE_KEY_TIMESTAMP, sessionStartTimestamp);
+        editor.apply();
+        writeSessionToDB();
+    }
+
+    private void stopRecording(){
+        Log.d(LOG_TAG, "stop recording");
+        scm.endSession();
+        wakeLock.release();
+        int nextSessionId = (currentSessionId+1 > 1000)? 0 : currentSessionId+1;
+        editor.putInt(PREFERENCE_FILE_KEY_SESSION_ID, nextSessionId);
+        editor.putBoolean(PREFERENCE_FILE_KEY_IS_COLLECTING, false);
+        editor.apply();
+        stopForeground(true);
     }
 
     @Override
     public void onDestroy() {
         Log.d(LOG_TAG, "service stopped, unregister listener");
-        isRunning = false;
-        unregisterReceiver(receiver);
-        stopForeground(true);
-        if(wakeLock.isHeld()){
-            wakeLock.release();
-            scm.endSession();
-        }
-        sendBroadcast(new Intent(BROADCAST_INTENT_ACTION));
+//        unregisterReceiver(receiver);
+        if(wakeLock.isHeld()) stopRecording();
+//        sendBroadcast(new Intent(BROADCAST_INTENT_ACTION));
+        SessionRepository.getInstance().shutDownDatabase();
         super.onDestroy();
-    }
-
-    public static boolean isServiceRunning(){
-        return isRunning;
     }
 
     private void startForeground(){

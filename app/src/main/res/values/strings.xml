@@ -7,4 +7,24 @@
     <string name="record_id">Record ID</string>
     <string name="session_id">Session ID</string>
     <string name="sample_rate">Sample Rate</string>
+<!-- Shared Preference Keys -->
+    <string name="shared_pref_record_id">record id</string>
+    <string name="shared_pref_session_id">session id</string>
+    <string name="shared_pref_sample_rate">sample_rate</string>
+    <string name="shared_pref_timestamp">timestamp</string>
+    <string name="shared_pref_is_collecting">is collecting</string>
+
+<!-- Intent Extra Keys -->
+    <string name="intent_extra_key_record_id">record id</string>
+
+<!-- Garmin Connect IQ initialization failed dialog -->
+    <string name="install_needed_title">Garmin Connect Mobile Not Installed</string>
+    <string name="install_needed_message">Could not connect to Garmin device without Garmin Connect Mobile</string>
+    <string name="install_needed_yes">Install</string>
+    <string name="install_needed_cancel">Cancel</string>
+    <string name="upgrade_needed_title">Upgrade Garmin Connect Mobile</string>
+    <string name="upgrade_needed_message">Current version of Garmin Connect Mobile doesn\'t support IMU Collector</string>
+    <string name="upgrade_needed_yes">Upgrade</string>
+    <string name="upgrade_needed_cancel">Cancel</string>
+    
 </resources>

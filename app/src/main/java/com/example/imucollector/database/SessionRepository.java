@@ -1,5 +1,8 @@
 package com.example.imucollector.database;
 
+import android.content.Context;
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 
 import com.example.imucollector.dao.AccSensorDataDao;
@@ -17,30 +20,45 @@ public class SessionRepository {
     private static final String LOG_TAG = "SessionRepository";
     private static SessionRepository INSTANCE = null;
     private static final int NUMBER_OF_THREADS = 1;
+
+    private static int userCnt = 0;
+
     private ExecutorService pool;
+    private SessionDatabase db;
     private SessionDao sessionDao;
     private AccSensorDataDao accSensorDataDao;
     private GyroSensorDataDao gyroSensorDataDao;
     private LiveData<List<Session>> allSessions;
 
+
     private SessionRepository(){ }
 
-    public void init(SessionDatabase db) {
-        sessionDao = db.sessionDao();
-        accSensorDataDao = db.accSensorDataDao();
-        gyroSensorDataDao = db.gyroSensorDataDao();
-        allSessions = sessionDao.getAllSessions();
-        pool = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
+    public synchronized void init(Context context) {
+        if(userCnt == 0){
+            db = SessionDatabase.getInstance(context);
+            sessionDao = db.sessionDao();
+            accSensorDataDao = db.accSensorDataDao();
+            gyroSensorDataDao = db.gyroSensorDataDao();
+            allSessions = sessionDao.getAllSessions();
+            pool = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
+        }
+        userCnt++;
     }
 
-    public static SessionRepository getInstance(){
+    public synchronized static SessionRepository getInstance(){
         if(INSTANCE == null){
             INSTANCE = new SessionRepository();
         }
         return INSTANCE;
     }
-    public void shutDownDatabaseThreadPool(){
-        pool.shutdown();
+
+    public synchronized void shutDownDatabase(){
+        userCnt--;
+        if(userCnt == 0){
+            Log.d(LOG_TAG, "close db");
+//            db.close();
+            pool.shutdown();
+        }
     }
 
     public LiveData<List<Session>> getAllSessions(){

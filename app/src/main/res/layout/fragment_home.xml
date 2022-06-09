@@ -157,7 +157,7 @@
             app:layout_constraintEnd_toEndOf="@id/slider_freq"
             app:layout_constraintTop_toBottomOf="@id/slider_freq"
             android:textSize="18sp"
-            android:text="@{String.valueOf(homeViewModel.currentFreq)+`Hz`}"
+            android:text="@{String.valueOf(homeViewModel.currentSampleRate)+`Hz`}"
             />
 
         <androidx.constraintlayout.widget.Guideline
